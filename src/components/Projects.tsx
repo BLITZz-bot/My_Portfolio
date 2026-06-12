@@ -45,8 +45,7 @@ export function Projects() {
     setCurrentImageIndex((prev) => (prev - 1 + selectedProject.gallery.length) % selectedProject.gallery.length);
   };
 
-  const displayProjects = (dbProjects.length > 0 ? dbProjects : staticProjects)
-    .filter(p => !p.is_archived);
+  const displayProjects = dbProjects.length > 0 ? dbProjects : staticProjects;
 
   return (
     <section id="projects" className="py-24 px-6 bg-neutral-950">

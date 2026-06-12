@@ -46,8 +46,7 @@ export default function ProjectsPage() {
     setCurrentImageIndex((prev) => (prev - 1 + selectedProject.gallery.length) % selectedProject.gallery.length);
   };
 
-  const displayProjects = (dbProjects.length > 0 ? dbProjects : staticProjects)
-    .filter(p => !p.is_archived);
+  const displayProjects = dbProjects.length > 0 ? dbProjects : staticProjects;
 
   return (
     <div className="min-h-screen bg-neutral-950 pt-32 pb-24 px-6">

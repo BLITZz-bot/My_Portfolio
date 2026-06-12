@@ -4,12 +4,28 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ExternalLink, X, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
 import { Github } from "@/components/Icons";
-import { projects, Project } from "@/lib/projects";
+import { projects as staticProjects, Project } from "@/lib/projects";
 import Link from "next/link";
+import { getProjects } from "@/app/actions/admin";
 
 export default function ProjectsPage() {
+  const [dbProjects, setDbProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const fetchProjectsData = async () => {
+    const data = await getProjects();
+    if (data && data.length > 0) {
+      setDbProjects(data as unknown as Project[]);
+    }
+  };
+
+  useEffect(() => {
+    const loadData = async () => {
+      await fetchProjectsData();
+    };
+    loadData();
+  }, []);
 
   // Handle ESC key to close modal
   useEffect(() => {
@@ -29,6 +45,9 @@ export default function ProjectsPage() {
     if (!selectedProject) return;
     setCurrentImageIndex((prev) => (prev - 1 + selectedProject.gallery.length) % selectedProject.gallery.length);
   };
+
+  const displayProjects = (dbProjects.length > 0 ? dbProjects : staticProjects)
+    .filter(p => !p.is_archived);
 
   return (
     <div className="min-h-screen bg-neutral-950 pt-32 pb-24 px-6">
@@ -52,16 +71,16 @@ export default function ProjectsPage() {
           </div>
           <div className="text-right hidden md:block">
             <p className="text-sm font-bold tracking-widest text-neutral-800 uppercase tabular-nums">
-              {projects.length} PROJECTS TOTAL
+              {displayProjects.length} PROJECTS TOTAL
             </p>
           </div>
         </div>
 
         {/* Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {projects.map((project, index) => (
+          {displayProjects.map((project, index) => (
             <motion.div
-              key={project.id}
+              key={project.id || project.title}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.05 }}
@@ -114,7 +133,7 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {/* Shared Project Details Modal (duplicated for now to keep context clean) */}
+      {/* Shared Project Details Modal */}
       <AnimatePresence>
         {selectedProject && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center px-6 py-12">

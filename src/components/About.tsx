@@ -5,6 +5,7 @@ import { useEffect, useState, useRef } from "react";
 import { Code2, Palette, Globe2, Zap } from "lucide-react";
 import { Github, Twitter, Linkedin } from "@/components/Icons";
 import { cn } from "@/lib/utils";
+import { getSettings } from "@/app/actions/admin";
 
 const skills = [
   { name: "React / Next.js", icon: Code2, color: "text-blue-400" },
@@ -63,6 +64,25 @@ function AnimatedStat({ value, suffix, label, delay = 0 }: { value: number, suff
 }
 
 export function About() {
+  const [data, setData] = useState({
+    about_text: "Computer Science student passionate about full-stack development, AI, and building modern digital experiences. Experienced in developing and deploying web applications, participating in competitive hackathons, and creating solutions that address real-world challenges. Recognized with four hackathon victories and a Best Implementation Award for innovation, technical execution, and problem-solving excellence.",
+    projects_built: 12,
+    hackathons_won: 4,
+    awards_won: 1,
+    location: "Bangkok, Thailand",
+    location_status: "Working remotely worldwide."
+  });
+
+  useEffect(() => {
+    const loadData = async () => {
+      const settings = await getSettings();
+      if (settings) {
+        setData(settings);
+      }
+    };
+    loadData();
+  }, []);
+
   return (
     <section id="about" className="py-24 px-6 bg-neutral-950">
       <div className="max-w-7xl mx-auto">
@@ -78,9 +98,9 @@ export function About() {
               className="md:col-span-2 p-8 rounded-3xl bg-neutral-900 border border-neutral-800 flex flex-col justify-between"
             >
               <div>
-                <h2 className="text-3xl font-bold mb-4 tracking-tight">I bridge the gap between design and engineering.</h2>
+                <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">ABOUT <span className="text-neutral-500">ME</span></h2>
                 <p className="text-neutral-400 text-lg leading-relaxed">
-                 Computer Science student passionate about full-stack development, AI, and building modern digital experiences. Experienced in developing and deploying web applications, participating in competitive hackathons, and creating solutions that address real-world challenges. Recognized with four hackathon victories and a Best Implementation Award for innovation, technical execution, and problem-solving excellence.
+                 {data.about_text}
                 </p>
               </div>
               <div className="mt-8 flex gap-4">
@@ -98,9 +118,9 @@ export function About() {
 
             {/* Stats Column */}
             <div className="flex flex-col gap-6 h-full">
-              <AnimatedStat value={12} suffix="+" label="Projects Built" delay={0.1} />
-              <AnimatedStat value={4} suffix="x" label="Hackathon Winner" delay={0.2} />
-              <AnimatedStat value={1} suffix="x" label="Best Implementation Award" delay={0.3} />
+              <AnimatedStat value={data.projects_built} suffix="+" label="Projects Built" delay={0.1} />
+              <AnimatedStat value={data.hackathons_won} suffix="x" label="Hackathon Winner" delay={0.2} />
+              <AnimatedStat value={data.awards_won} suffix="x" label="Best Implementation Award" delay={0.3} />
             </div>
 
             {/* Skills Card */}
@@ -134,8 +154,8 @@ export function About() {
             >
               <div className="relative z-10">
                 <h3 className="text-sm font-bold uppercase tracking-widest text-neutral-500 mb-2">Location</h3>
-                <div className="text-2xl font-bold">Bangkok, Thailand</div>
-                <p className="text-neutral-500 mt-2 italic text-sm">Working remotely worldwide.</p>
+                <div className="text-2xl font-bold">{data.location}</div>
+                <p className="text-neutral-500 mt-2 italic text-sm">{data.location_status}</p>
               </div>
               <div className="absolute top-0 right-0 w-full h-full opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-700">
                 <Globe2 size={400} className="absolute -right-20 -bottom-20" />

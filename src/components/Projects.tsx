@@ -4,14 +4,29 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ExternalLink, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Github } from "@/components/Icons";
-import { projects, Project } from "@/lib/projects";
+import { projects as staticProjects, Project } from "@/lib/projects";
 import Link from "next/link";
+import { getProjects } from "@/app/actions/admin";
 
 export function Projects() {
+  const [dbProjects, setDbProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Handle ESC key to close modal
+  const fetchProjectsData = async () => {
+    const data = await getProjects();
+    if (data && data.length > 0) {
+      setDbProjects(data as unknown as Project[]);
+    }
+  };
+
+  useEffect(() => {
+    const loadData = async () => {
+      await fetchProjectsData();
+    };
+    loadData();
+  }, []);
+
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === "Escape") setSelectedProject(null);
@@ -30,6 +45,9 @@ export function Projects() {
     setCurrentImageIndex((prev) => (prev - 1 + selectedProject.gallery.length) % selectedProject.gallery.length);
   };
 
+  const displayProjects = (dbProjects.length > 0 ? dbProjects : staticProjects)
+    .filter(p => !p.is_archived);
+
   return (
     <section id="projects" className="py-24 px-6 bg-neutral-950">
       <div className="max-w-7xl mx-auto">
@@ -37,7 +55,7 @@ export function Projects() {
           <div>
             <h2 className="text-4xl md:text-6xl font-bold tracking-tighter mb-4 text-white">THINGS I&apos;VE <span className="text-neutral-500">BUILT.</span></h2>
             <p className="text-neutral-500 max-w-md">
-              CREATE TO INSPRE.<br />A curated collection of projects where I&apos;ve combined technical excellence with creative design.
+              CREATE TO INSPIRE.<br />A curated collection of projects where I&apos;ve combined technical excellence with creative design.
             </p>
           </div>
           <Link href="/projects">
@@ -52,9 +70,9 @@ export function Projects() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {projects.slice(0, 4).map((project, index) => (
+          {displayProjects.slice(0, 4).map((project, index) => (
             <motion.div
-              key={project.title}
+              key={project.id || project.title}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: index * 0.1 }}

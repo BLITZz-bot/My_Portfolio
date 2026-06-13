@@ -95,7 +95,7 @@ export function Testimonials() {
       setFormData({ name: "", email: "", role: "Client", designation: "", content: "" });
       fetchComments(); // Refresh list
     } else {
-      alert("Failed to submit comment. Make sure your Supabase credentials are set up.");
+      alert(`Failed to submit comment: ${result.error || "Unknown error"}. Make sure your Supabase credentials are set up.`);
     }
   };
 

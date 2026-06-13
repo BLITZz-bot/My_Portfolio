@@ -281,6 +281,8 @@ export default function AdminDashboard() {
       loadAllData();
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
+    } else {
+      alert("Error approving comment: " + result.error);
     }
   };
 
@@ -288,7 +290,11 @@ export default function AdminDashboard() {
     if (!session?.access_token) return;
     if (confirm("Permanently delete this comment?")) {
       const result = await deleteComment(id, session.access_token);
-      if (result.success) loadAllData();
+      if (result.success) {
+        loadAllData();
+      } else {
+        alert("Error deleting comment: " + result.error);
+      }
     }
   };
 

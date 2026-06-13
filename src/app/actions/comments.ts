@@ -2,6 +2,18 @@
 
 import { supabase, verifyAdmin } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
+import { createClient } from "@supabase/supabase-js";
+
+function getAdminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_SERVICE_KEY;
+
+  if (!url || !key) {
+    throw new Error("Supabase Admin credentials (SUPABASE_SERVICE_ROLE_KEY) are missing in environment variables.");
+  }
+
+  return createClient(url, key);
+}
 
 export async function getApprovedComments() {
   if (!supabase) {
@@ -74,17 +86,20 @@ export async function approveComment(commentId: string, sessionToken: string) {
     return { success: false, error: authCheck.error || "Unauthorized" };
   }
 
-  if (!supabase) return { success: false, error: "Supabase error" };
+  try {
+    const supabaseAdmin = getAdminClient();
+    const { error } = await supabaseAdmin
+      .from("comments")
+      .update({ approved: true })
+      .eq("id", commentId);
 
-  const { error } = await supabase
-    .from("comments")
-    .update({ approved: true })
-    .eq("id", commentId);
-
-  if (error) return { success: false, error: error.message };
-  
-  revalidatePath("/");
-  return { success: true };
+    if (error) return { success: false, error: error.message };
+    
+    revalidatePath("/");
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
 }
 
 // Admin Action: Delete/Reject Comment
@@ -94,15 +109,18 @@ export async function deleteComment(commentId: string, sessionToken: string) {
     return { success: false, error: authCheck.error || "Unauthorized" };
   }
 
-  if (!supabase) return { success: false, error: "Supabase error" };
+  try {
+    const supabaseAdmin = getAdminClient();
+    const { error } = await supabaseAdmin
+      .from("comments")
+      .delete()
+      .eq("id", commentId);
 
-  const { error } = await supabase
-    .from("comments")
-    .delete()
-    .eq("id", commentId);
-
-  if (error) return { success: false, error: error.message };
-  
-  revalidatePath("/");
-  return { success: true };
+    if (error) return { success: false, error: error.message };
+    
+    revalidatePath("/");
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
 }

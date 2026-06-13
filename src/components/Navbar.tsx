@@ -128,19 +128,27 @@ export function Navbar() {
               key={item.name}
               href={item.href}
               onClick={(e) => handleNavClick(e, item.href)}
-              className="text-sm font-medium text-neutral-400 hover:text-white transition-colors"
+              className={cn(
+                "text-sm font-medium transition-colors",
+                isScrolled 
+                  ? "text-neutral-400 hover:text-white" 
+                  : "text-neutral-600 hover:text-black"
+              )}
             >
               {item.name}
             </Link>
           ))}
           
-          <div className="h-4 w-[1px] bg-white/10 mx-2" />
+          <div className={cn("h-4 w-[1px] mx-2", isScrolled ? "bg-white/10" : "bg-black/10")} />
 
           {/* Profile Section */}
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => session ? setIsDropdownOpen(!isDropdownOpen) : handleSignIn()}
-              className="flex items-center justify-center w-9 h-9 rounded-full border border-white/10 bg-neutral-900 overflow-hidden hover:border-white/30 transition-all group"
+              className={cn(
+                "flex items-center justify-center w-9 h-9 rounded-full border bg-neutral-900 overflow-hidden transition-all group",
+                isScrolled ? "border-white/10 hover:border-white/30" : "border-black/10 hover:border-black/30"
+              )}
             >
               {avatarUrl ? (
                 <img 
@@ -149,7 +157,7 @@ export function Navbar() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <User size={18} className="text-neutral-500 group-hover:text-white transition-colors" />
+                <User size={18} className={cn("transition-colors", isScrolled ? "text-neutral-500 group-hover:text-white" : "text-neutral-500 group-hover:text-black")} />
               )}
             </button>
 
@@ -194,7 +202,10 @@ export function Navbar() {
 
         {/* Mobile Toggle */}
         <button
-          className="md:hidden p-2 text-neutral-400 hover:text-white transition-colors"
+          className={cn(
+            "md:hidden p-2 transition-colors",
+            isScrolled ? "text-neutral-400 hover:text-white" : "text-neutral-600 hover:text-black"
+          )}
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
           {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}

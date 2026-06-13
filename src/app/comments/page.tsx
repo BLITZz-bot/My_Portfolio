@@ -63,7 +63,7 @@ export default function CommentsPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-8">
           <div>
             <Link 
-              href="/#testimonials" 
+              href="/#recommendations" 
               className="inline-flex items-center gap-2 text-neutral-500 hover:text-white transition-colors mb-6 group"
             >
               <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />

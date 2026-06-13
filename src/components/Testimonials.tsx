@@ -143,7 +143,7 @@ export function Testimonials() {
   ];
 
   return (
-    <section id="testimonials" className="py-24 px-6 bg-transparent relative">
+    <section id="recommendations" className="py-24 px-6 bg-transparent relative">
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16">
           <div>

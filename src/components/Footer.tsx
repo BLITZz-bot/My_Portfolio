@@ -22,19 +22,21 @@ export function Footer() {
           </p>
         </div>
         
-        <div className="flex flex-col gap-4">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-neutral-500">Contact</h3>
-          <div className="flex flex-col gap-3">
-            <a href="tel:+917975871167" className="text-sm text-neutral-400 hover:text-white transition-colors">+91 7975871167</a>
-            <a href="mailto:bharatha9483@gmail.com" className="text-sm text-neutral-400 hover:text-white transition-colors">bharatha9483@gmail.com</a>
+        <div className="flex flex-row gap-16 md:contents">
+          <div className="flex flex-col gap-4">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-neutral-500">Contact</h3>
+            <div className="flex flex-col gap-3">
+              <a href="tel:+917975871167" className="text-sm text-neutral-400 hover:text-white transition-colors">+91 7975871167</a>
+              <a href="mailto:bharatha9483@gmail.com" className="text-sm text-neutral-400 hover:text-white transition-colors">bharatha9483@gmail.com</a>
+            </div>
           </div>
-        </div>
 
-        <div className="flex flex-col gap-4">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-neutral-500">Social</h3>
-          <div className="flex gap-5">
-            <a href="https://www.linkedin.com/in/bharath-m-m-a9960b309/" className="text-neutral-400 hover:text-white transition-colors"><Linkedin size={20} /></a>
-            <a href="https://github.com/BLITZz-bot" className="text-neutral-400 hover:text-white transition-colors"><Github size={20} /></a>
+          <div className="flex flex-col gap-4">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-neutral-500">Social</h3>
+            <div className="flex gap-5">
+              <a href="https://www.linkedin.com/in/bharath-m-m-a9960b309/" className="text-neutral-400 hover:text-white transition-colors"><Linkedin size={20} /></a>
+              <a href="https://github.com/BLITZz-bot" className="text-neutral-400 hover:text-white transition-colors"><Github size={20} /></a>
+            </div>
           </div>
         </div>
 

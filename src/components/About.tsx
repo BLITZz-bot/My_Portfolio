@@ -181,10 +181,10 @@ export function About() {
               className="p-10 rounded-[32px] bg-neutral-900 border border-neutral-800 relative overflow-hidden group"
             >
               <div className="relative z-10">
-                <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-neutral-500 mb-8">Expertise</h3>
+                <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-neutral-500 mb-8">TECH STACK</h3>
                 <div className="space-y-5">
                   {(data.skills || []).length === 0 ? (
-                    <p className="text-neutral-500 text-sm italic">No expertise added yet.</p>
+                    <p className="text-neutral-500 text-sm italic">No tech stack added yet.</p>
                   ) : (
                     (data.skills || []).map((skillName: string) => {
                       const config = getSkillConfig(skillName);

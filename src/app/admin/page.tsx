@@ -542,7 +542,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">Expertise (Comma-separated)</label>
+                        <label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">Tech Stack (Comma-separated)</label>
                         <input 
                           value={skillsInput}
                           onChange={(e) => setSkillsInput(e.target.value)}
@@ -640,7 +640,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">Expertise</label>
+                        <label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">Tech Stack</label>
                         <div className="flex flex-wrap gap-2 bg-neutral-950/50 border border-white/5 rounded-2xl px-6 py-5 min-h-[60px]">
                           {settingsData.skills.length > 0 ? (
                             settingsData.skills.map((skill, i) => (
@@ -649,7 +649,7 @@ export default function AdminDashboard() {
                               </span>
                             ))
                           ) : (
-                            <span className="text-neutral-600 italic text-sm">No expertise added yet.</span>
+                            <span className="text-neutral-600 italic text-sm">No tech stack added yet.</span>
                           )}
                         </div>
                       </div>

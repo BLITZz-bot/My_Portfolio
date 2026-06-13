@@ -128,17 +128,19 @@ export function Projects() {
                     >
                       <ExternalLink size={24} strokeWidth={2.5} />
                     </motion.button>
-                    <motion.a 
-                      href={project.github}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      whileHover={{ scale: 1.1, y: -5 }}
-                      whileTap={{ scale: 0.9 }}
-                      className="p-5 bg-neutral-800 text-white rounded-full border border-white/10 shadow-xl shadow-black/50 transition-colors hover:border-white/30"
-                      title="View Source Code"
-                    >
-                      <Github size={24} />
-                    </motion.a>
+                    {project.github && project.github !== "#" && (
+                      <motion.a 
+                        href={project.github}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        whileHover={{ scale: 1.1, y: -5 }}
+                        whileTap={{ scale: 0.9 }}
+                        className="p-5 bg-neutral-800 text-white rounded-full border border-white/10 shadow-xl shadow-black/50 transition-colors hover:border-white/30"
+                        title="View Source Code"
+                      >
+                        <Github size={24} />
+                      </motion.a>
+                    )}
                   </motion.div>
                 </div>
                 
@@ -258,21 +260,23 @@ export function Projects() {
                         href={selectedProject.link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 py-4 bg-white text-black text-center font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-neutral-200 transition-colors shadow-lg shadow-white/5"
+                        className={`flex-1 py-4 bg-white text-black text-center font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-neutral-200 transition-colors shadow-lg shadow-white/5 ${!(selectedProject.github && selectedProject.github !== "#") ? "w-full" : ""}`}
                       >
                         Live Demo
                         <ExternalLink size={18} />
                       </a>
                     )}
-                    <a 
-                      href={selectedProject.github}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`flex-1 py-4 bg-neutral-800 text-white text-center font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-neutral-700 transition-colors ${!(selectedProject.link && selectedProject.link !== "#") ? "w-full" : ""}`}
-                    >
-                      Github
-                      <Github size={18} />
-                    </a>
+                    {selectedProject.github && selectedProject.github !== "#" && (
+                      <a 
+                        href={selectedProject.github}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`flex-1 py-4 bg-neutral-800 text-white text-center font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-neutral-700 transition-colors ${!(selectedProject.link && selectedProject.link !== "#") ? "w-full" : ""}`}
+                      >
+                        Github
+                        <Github size={18} />
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>

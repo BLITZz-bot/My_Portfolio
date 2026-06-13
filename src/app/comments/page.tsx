@@ -1,0 +1,86 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { getApprovedComments } from "@/app/actions/comments";
+
+interface Comment {
+  id: string;
+  name: string;
+  role: string;
+  designation?: string;
+  content: string;
+  approved: boolean;
+}
+
+export default function CommentsPage() {
+  const [dbComments, setDbComments] = useState<Comment[]>([]);
+
+  useEffect(() => {
+    const loadComments = async () => {
+      const data = await getApprovedComments();
+      if (data) {
+        setDbComments(data as Comment[]);
+      }
+    };
+    loadComments();
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-neutral-950 pt-32 pb-24 px-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-8">
+          <div>
+            <Link 
+              href="/#testimonials" 
+              className="inline-flex items-center gap-2 text-neutral-500 hover:text-white transition-colors mb-6 group"
+            >
+              <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+              Back to Home
+            </Link>
+            <h1 className="text-5xl md:text-7xl font-bold tracking-tighter text-white uppercase italic">
+              All <span className="text-neutral-500">Feedback.</span>
+            </h1>
+            <p className="text-neutral-500 max-w-md mt-4">
+              Recommendations and feedback from clients, mentors, and teammates.
+            </p>
+          </div>
+          <div className="text-right hidden md:block">
+            <p className="text-sm font-bold tracking-widest text-neutral-800 uppercase tabular-nums">
+              {dbComments.length} RECOMMENDATIONS TOTAL
+            </p>
+          </div>
+        </div>
+
+        {/* Grid */}
+        {dbComments.length === 0 ? (
+          <div className="w-full text-center py-32 bg-neutral-900/40 border border-white/5 rounded-[40px] backdrop-blur-sm">
+            <p className="text-neutral-500 font-bold uppercase tracking-widest text-sm">No recommendations yet.</p>
+            <p className="text-neutral-600 text-sm mt-2">No feedback has been published yet.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {dbComments.map((t, i) => (
+              <motion.div 
+                key={t.id || t.name + i}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: i * 0.05 }}
+                className="p-8 rounded-3xl bg-neutral-900/50 backdrop-blur-md border border-neutral-800 relative group flex flex-col justify-between"
+              >
+                <p className="text-lg text-neutral-300 mb-6 italic leading-relaxed">&quot;{t.content}&quot;</p>
+                <div>
+                  <h4 className="font-bold text-white text-lg">{t.name}</h4>
+                  <p className="text-sm text-neutral-500">{t.designation ? `${t.designation} @ ` : ""}{t.role}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

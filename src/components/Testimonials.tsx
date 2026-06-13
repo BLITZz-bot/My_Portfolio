@@ -6,6 +6,7 @@ import { MessageSquare, Send, X, CheckCircle } from "lucide-react";
 import { submitComment, getApprovedComments } from "@/app/actions/comments";
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
+import Link from "next/link";
 
 interface Comment {
   id: string;
@@ -111,26 +112,8 @@ export function Testimonials() {
     }
   };
 
-  const displayComments = dbComments.length > 0 
-    ? dbComments 
-    : [
-        {
-          id: "1",
-          name: "Sarah Johnson",
-          role: "CEO, TechFlow",
-          designation: "Founder",
-          content: "The attention to detail and animation quality is outstanding. One of the best developers I've worked with.",
-          approved: true,
-        },
-        {
-          id: "2",
-          name: "Michael Chen",
-          role: "Art Director, Creative Labs",
-          designation: "Principal",
-          content: "Transformed our vision into a fluid, interactive reality. The performance on mobile is particularly impressive.",
-          approved: true,
-        },
-      ];
+  const displayComments = dbComments;
+  const visibleComments = displayComments.slice(0, 2);
 
   const relationships = [
     "Teacher", "Mentor", "Teammate", "Hackathon Judge", 
@@ -140,30 +123,55 @@ export function Testimonials() {
   return (
     <section id="testimonials" className="py-24 px-6 bg-neutral-950 relative overflow-hidden">
       <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-end mb-16">
+          <div>
+            <h2 className="text-4xl md:text-6xl font-bold text-white tracking-tighter mb-4 italic">WHAT PEOPLE <span className="text-neutral-500">SAY.</span></h2>
+            <p className="text-neutral-500 max-w-md">
+              FEEDBACK & RECOMMENDATIONS.<br />Read what clients, teammates, and mentors say about our collaboration.
+            </p>
+          </div>
+          <Link href="/comments">
+            <motion.div 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="hidden md:block px-6 py-3 border border-neutral-800 rounded-full text-sm font-bold text-white hover:bg-white hover:text-black transition-all cursor-pointer"
+            >
+              View All Recommendations
+            </motion.div>
+          </Link>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
           {/* Left Side: Display Testimonials */}
           <div>
-            <h2 className="text-4xl md:text-6xl font-bold text-white tracking-tighter mb-8 italic">WHAT PEOPLE <span className="text-neutral-500">SAYS.</span></h2>
-            <div className="space-y-6">
-              {displayComments.map((t, i) => (
-                <motion.div 
-                  key={t.name + i}
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  viewport={{ once: false, amount: 0.8 }}
-                  className="p-8 rounded-3xl bg-neutral-900/50 backdrop-blur-md border border-neutral-800 relative group"
-                >
-                  <p className="text-lg text-neutral-300 mb-6 italic">&quot;{t.content}&quot;</p>
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <h4 className="font-bold text-white">{t.name}</h4>
-                      <p className="text-sm text-neutral-500">{t.designation ? `${t.designation} @ ` : ""}{t.role}</p>
+            {displayComments.length === 0 ? (
+              <div className="p-8 rounded-3xl bg-neutral-900/40 border border-white/5 backdrop-blur-sm text-center py-16">
+                <p className="text-neutral-500 font-bold uppercase tracking-widest text-xs">No recommendations yet.</p>
+                <p className="text-neutral-600 text-sm mt-2">Be the first to leave feedback on our collaboration!</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {visibleComments.map((t, i) => (
+                  <motion.div 
+                    layout
+                    key={t.id || t.name + i}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    viewport={{ once: false, amount: 0.8 }}
+                    className="p-8 rounded-3xl bg-neutral-900/50 backdrop-blur-md border border-neutral-800 relative group"
+                  >
+                    <p className="text-lg text-neutral-300 mb-6 italic">&quot;{t.content}&quot;</p>
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <h4 className="font-bold text-white">{t.name}</h4>
+                        <p className="text-sm text-neutral-500">{t.designation ? `${t.designation} @ ` : ""}{t.role}</p>
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Right Side: Redesigned CTA Card */}

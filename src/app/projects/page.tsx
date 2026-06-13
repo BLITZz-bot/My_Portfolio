@@ -86,68 +86,75 @@ export default function ProjectsPage() {
         </div>
 
         {/* Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {displayProjects.map((project, index) => (
-            <motion.div
-              key={project.id || project.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.05 }}
-              className="group relative"
-            >
-              <div 
-                className="relative aspect-video overflow-hidden rounded-3xl bg-neutral-900 border border-neutral-800 cursor-pointer"
-                onClick={() => {
-                  if (isMobile) {
-                    setSelectedProject(project);
-                    setCurrentImageIndex(0);
-                  }
-                }}
+        {displayProjects.length === 0 ? (
+          <div className="w-full text-center py-32 bg-neutral-900/40 border border-white/5 rounded-[40px] backdrop-blur-sm">
+            <p className="text-neutral-500 font-bold uppercase tracking-widest text-sm">Project vault is empty.</p>
+            <p className="text-neutral-600 text-sm mt-2">No projects have been published yet.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {displayProjects.map((project, index) => (
+              <motion.div
+                key={project.id || project.title}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.05 }}
+                className="group relative"
               >
-                <img 
-                  src={project.thumbnail} 
-                  alt={project.title}
-                  className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
-                />
-                
-                {/* Overlay */}
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  whileHover={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                  className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center gap-4"
-                >
-                  <motion.button 
-                    onClick={() => {
+                <div 
+                  className="relative aspect-video overflow-hidden rounded-3xl bg-neutral-900 border border-neutral-800 cursor-pointer"
+                  onClick={() => {
+                    if (isMobile) {
                       setSelectedProject(project);
                       setCurrentImageIndex(0);
-                    }}
-                    whileHover={{ scale: 1.1, y: -5 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="p-5 bg-white text-black rounded-full shadow-xl shadow-white/10"
+                    }
+                  }}
+                >
+                  <img 
+                    src={project.thumbnail} 
+                    alt={project.title}
+                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                  />
+                  
+                  {/* Overlay */}
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    whileHover={{ opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center gap-4"
                   >
-                    <ExternalLink size={24} strokeWidth={2.5} />
-                  </motion.button>
-                  <motion.a 
-                    href={project.github}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    whileHover={{ scale: 1.1, y: -5 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="p-5 bg-neutral-800 text-white rounded-full border border-white/10 shadow-xl shadow-black/50"
-                  >
-                    <Github size={24} />
-                  </motion.a>
-                </motion.div>
-              </div>
-              
-              <div className="mt-6">
-                <h3 className="text-xl font-bold text-white group-hover:text-neutral-400 transition-colors uppercase tracking-tight">{project.title}</h3>
-                <p className="text-sm text-neutral-500 mt-1 uppercase tracking-widest font-medium">{project.category}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+                    <motion.button 
+                      onClick={() => {
+                        setSelectedProject(project);
+                        setCurrentImageIndex(0);
+                      }}
+                      whileHover={{ scale: 1.1, y: -5 }}
+                      whileTap={{ scale: 0.9 }}
+                      className="p-5 bg-white text-black rounded-full shadow-xl shadow-white/10"
+                    >
+                      <ExternalLink size={24} strokeWidth={2.5} />
+                    </motion.button>
+                    <motion.a 
+                      href={project.github}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      whileHover={{ scale: 1.1, y: -5 }}
+                      whileTap={{ scale: 0.9 }}
+                      className="p-5 bg-neutral-800 text-white rounded-full border border-white/10 shadow-xl shadow-black/50"
+                    >
+                      <Github size={24} />
+                    </motion.a>
+                  </motion.div>
+                </div>
+                
+                <div className="mt-6">
+                  <h3 className="text-xl font-bold text-white group-hover:text-neutral-400 transition-colors uppercase tracking-tight">{project.title}</h3>
+                  <p className="text-sm text-neutral-500 mt-1 uppercase tracking-widest font-medium">{project.category}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Shared Project Details Modal */}

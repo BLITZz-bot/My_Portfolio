@@ -78,13 +78,7 @@ export function Projects() {
   const displayProjects = dbProjects.length > 0 ? dbProjects : staticProjects;
 
   return (
-    <section id="projects" className="py-24 px-6 bg-neutral-950 relative overflow-hidden">
-      {/* Grainy Noise Background */}
-      <Noise patternAlpha={15} />
-
-      {/* Radial Vignette for depth */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(0,0,0,0.85)_100%)] pointer-events-none" />
-
+    <section id="projects" className="py-24 px-6 bg-transparent relative">
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16">
           <div>

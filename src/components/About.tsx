@@ -3,7 +3,7 @@
 import { motion, useInView, animate } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
 import { Code2, Palette, Globe2, Zap, Sparkles, User, Trophy, Medal, Rocket, Terminal, Fingerprint } from "lucide-react";
-import { Github, Twitter, Linkedin } from "@/components/Icons";
+import { Github, Linkedin } from "@/components/Icons";
 import { cn } from "@/lib/utils";
 import { getSettings } from "@/app/actions/admin";
 
@@ -133,14 +133,21 @@ export function About() {
                   
                   <div className="mt-12 flex items-center gap-6">
                     <div className="flex gap-3">
-                      <a href="#" className="w-11 h-11 rounded-xl bg-neutral-800 flex items-center justify-center text-neutral-400 hover:text-white hover:bg-neutral-700 transition-all border border-white/5 hover:border-white/10">
-                        <Github size={18} />
-                      </a>
-                      <a href="#" className="w-11 h-11 rounded-xl bg-neutral-800 flex items-center justify-center text-neutral-400 hover:text-white hover:bg-neutral-700 transition-all border border-white/5 hover:border-white/10">
-                        <Twitter size={18} />
-                      </a>
-                      <a href="#" className="w-11 h-11 rounded-xl bg-neutral-800 flex items-center justify-center text-neutral-400 hover:text-white hover:bg-neutral-700 transition-all border border-white/5 hover:border-white/10">
+                      <a 
+                        href="https://www.linkedin.com/in/bharath-m-m-a9960b309/" 
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-11 h-11 rounded-xl bg-neutral-800 flex items-center justify-center text-neutral-400 hover:text-white hover:bg-neutral-700 transition-all border border-white/5 hover:border-white/10"
+                      >
                         <Linkedin size={18} />
+                      </a>
+                      <a 
+                        href="https://github.com/BLITZz-bot" 
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-11 h-11 rounded-xl bg-neutral-800 flex items-center justify-center text-neutral-400 hover:text-white hover:bg-neutral-700 transition-all border border-white/5 hover:border-white/10"
+                      >
+                        <Github size={18} />
                       </a>
                     </div>
                     <div className="h-4 w-px bg-white/10" />

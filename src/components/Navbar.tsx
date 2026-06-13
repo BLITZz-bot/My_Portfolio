@@ -89,7 +89,10 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         <Link 
           href="/" 
-          className="text-xl font-bold tracking-tighter text-black"
+          className={cn(
+            "text-xl font-bold tracking-tighter transition-colors duration-500",
+            isScrolled ? "text-white" : "text-black"
+          )}
         >
           M M <span className="text-neutral-500">BHARATH</span>
         </Link>

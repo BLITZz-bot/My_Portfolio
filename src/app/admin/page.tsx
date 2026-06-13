@@ -17,7 +17,9 @@ import {
   MessageSquare,
   Check,
   XCircle,
-  Download
+  Download,
+  Menu,
+  X
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
@@ -25,6 +27,7 @@ import { getSettings, updateSettings, getProjects, addProject, deleteProject, up
 import { getAllComments, approveComment, deleteComment } from "@/app/actions/comments";
 import { Project } from "@/lib/projects";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 interface SettingsData {
   about_text: string;
@@ -56,6 +59,7 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -326,9 +330,87 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="h-screen bg-neutral-950 text-white flex overflow-hidden">
-      {/* Sidebar */}
-      <div className="w-72 border-r border-white/5 p-8 flex flex-col justify-between bg-neutral-950/50 backdrop-blur-xl z-20 flex-shrink-0">
+    <div className="h-screen bg-neutral-950 text-white flex overflow-hidden relative">
+      {/* Mobile Top Bar */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 border-b border-white/5 bg-neutral-950/80 backdrop-blur-md z-30 flex items-center justify-between px-6">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+            <LayoutDashboard className="text-black" size={16} />
+          </div>
+          <span className="font-bold tracking-tighter text-lg italic">ADMIN<span className="text-neutral-500">.</span></span>
+        </div>
+        <button 
+          onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+          className="p-2 text-neutral-400 hover:text-white transition-colors"
+        >
+          {isMobileSidebarOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
+
+      {/* Mobile Dropdown Menu */}
+      <AnimatePresence>
+        {isMobileSidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="md:hidden fixed top-16 left-0 right-0 bg-neutral-950/95 border-b border-white/5 p-6 z-25 flex flex-col gap-2 backdrop-blur-lg"
+          >
+            <button 
+              onClick={() => {
+                setActiveTab("settings");
+                setIsMobileSidebarOpen(false);
+              }}
+              className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all font-medium ${activeTab === "settings" ? "bg-white text-black" : "text-neutral-500 hover:bg-white/5 hover:text-white"}`}
+            >
+              <SettingsIcon size={20} />
+              Settings
+            </button>
+            <button 
+              onClick={() => {
+                setActiveTab("projects");
+                setIsMobileSidebarOpen(false);
+              }}
+              className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all font-medium ${activeTab === "projects" ? "bg-white text-black" : "text-neutral-500 hover:bg-white/5 hover:text-white"}`}
+            >
+              <Briefcase size={20} />
+              Projects
+            </button>
+            <button 
+              onClick={() => {
+                setActiveTab("comments");
+                setIsMobileSidebarOpen(false);
+              }}
+              className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all font-medium ${activeTab === "comments" ? "bg-white text-black" : "text-neutral-500 hover:bg-white/5 hover:text-white"}`}
+            >
+              <MessageSquare size={20} />
+              Comments
+            </button>
+            <Link 
+              href="/"
+              onClick={() => setIsMobileSidebarOpen(false)}
+              className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-neutral-500 hover:bg-white/5 hover:text-white transition-all font-medium"
+            >
+              <Globe size={20} />
+              View Site
+            </Link>
+            <div className="h-[1px] bg-white/5 my-2" />
+            <button 
+              onClick={() => {
+                supabase?.auth.signOut();
+                setIsMobileSidebarOpen(false);
+              }}
+              className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-red-500 hover:bg-red-500/10 transition-all font-medium"
+            >
+              <LogOut size={20} />
+              Sign Out
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Sidebar - Desktop Only */}
+      <div className="hidden md:flex w-72 border-r border-white/5 p-8 flex-col justify-between bg-neutral-950/50 backdrop-blur-xl z-20 flex-shrink-0">
         <div>
           <div className="flex items-center gap-3 mb-12">
             <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
@@ -379,7 +461,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto p-12">
+      <div className="flex-1 overflow-y-auto p-6 pt-24 md:p-12">
         <div className="max-w-4xl mx-auto">
           {isLoading ? (
             <div className="flex items-center gap-3 text-neutral-500">

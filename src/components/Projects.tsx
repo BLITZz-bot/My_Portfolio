@@ -12,6 +12,16 @@ export function Projects() {
   const [dbProjects, setDbProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const fetchProjectsData = async () => {
     const data = await getProjects();
@@ -78,7 +88,15 @@ export function Projects() {
               viewport={{ once: true }}
               className="group relative"
             >
-              <div className="relative aspect-video overflow-hidden rounded-3xl bg-neutral-900 border border-neutral-800">
+              <div 
+                className="relative aspect-video overflow-hidden rounded-3xl bg-neutral-900 border border-neutral-800 cursor-pointer"
+                onClick={() => {
+                  if (isMobile) {
+                    setSelectedProject(project);
+                    setCurrentImageIndex(0);
+                  }
+                }}
+              >
                 <img 
                   src={project.thumbnail} 
                   alt={project.title}

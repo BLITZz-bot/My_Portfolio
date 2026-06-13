@@ -151,7 +151,7 @@ export function Testimonials() {
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.1 }}
-                  viewport={{ once: true }}
+                  viewport={{ once: false, amount: 0.8 }}
                   className="p-8 rounded-3xl bg-neutral-900/50 backdrop-blur-md border border-neutral-800 relative group"
                 >
                   <p className="text-lg text-neutral-300 mb-6 italic">&quot;{t.content}&quot;</p>

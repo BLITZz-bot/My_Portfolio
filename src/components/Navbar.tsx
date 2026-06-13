@@ -203,7 +203,7 @@ export function Navbar() {
                 <div className="flex items-center gap-3 px-2 mb-2">
                   <div className="w-10 h-10 rounded-full border border-white/10 bg-neutral-900 overflow-hidden">
                     {avatarUrl ? (
-                      <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+                      <img src={avatarUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center"><User size={20} className="text-neutral-500" /></div>
                     )}

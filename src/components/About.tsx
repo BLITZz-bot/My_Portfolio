@@ -6,6 +6,7 @@ import { Code2, Palette, Globe2, Zap, Sparkles, User, Trophy, Medal, Rocket, Ter
 import { Github, Linkedin } from "@/components/Icons";
 import { cn } from "@/lib/utils";
 import { getSettings } from "@/app/actions/admin";
+import { Noise } from "@/components/Noise";
 
 const skillIconMap: Record<string, { icon: any, color: string }> = {
   "react": { icon: Code2, color: "text-blue-400" },
@@ -95,12 +96,7 @@ export function About() {
   return (
     <section id="about" className="py-24 px-6 bg-neutral-950 relative overflow-hidden">
       {/* Grainy Noise Background */}
-      <div 
-        className="absolute inset-0 opacity-[0.08] pointer-events-none mix-blend-screen"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 250 250' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-        }}
-      />
+      <Noise patternAlpha={15} />
       
       {/* Radial Vignette for depth */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(0,0,0,0.85)_100%)] pointer-events-none" />

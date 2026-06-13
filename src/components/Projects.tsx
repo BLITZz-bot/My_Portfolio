@@ -8,6 +8,7 @@ import { projects as staticProjects, Project } from "@/lib/projects";
 import Link from "next/link";
 import { getProjects } from "@/app/actions/admin";
 import Image from "next/image";
+import { Noise } from "@/components/Noise";
 
 const ProjectSkeleton = () => (
   <div className="animate-pulse">
@@ -77,8 +78,14 @@ export function Projects() {
   const displayProjects = dbProjects.length > 0 ? dbProjects : staticProjects;
 
   return (
-    <section id="projects" className="py-24 px-6 bg-neutral-950">
-      <div className="max-w-7xl mx-auto">
+    <section id="projects" className="py-24 px-6 bg-neutral-950 relative overflow-hidden">
+      {/* Grainy Noise Background */}
+      <Noise patternAlpha={15} />
+
+      {/* Radial Vignette for depth */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(0,0,0,0.85)_100%)] pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto relative z-10">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16">
           <div>
             <h2 className="text-4xl md:text-6xl font-bold tracking-tighter mb-4 text-white">THINGS I&apos;VE <span className="text-neutral-500">BUILT.</span></h2>

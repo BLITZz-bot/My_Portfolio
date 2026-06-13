@@ -7,6 +7,7 @@ import { submitComment, getApprovedComments } from "@/app/actions/comments";
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
 import Link from "next/link";
+import { Noise } from "@/components/Noise";
 
 interface Comment {
   id: string;
@@ -143,7 +144,13 @@ export function Testimonials() {
 
   return (
     <section id="testimonials" className="py-24 px-6 bg-neutral-950 relative overflow-hidden">
-      <div className="max-w-7xl mx-auto">
+      {/* Grainy Noise Background */}
+      <Noise patternAlpha={15} />
+
+      {/* Radial Vignette for depth */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(0,0,0,0.85)_100%)] pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto relative z-10">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16">
           <div>
             <h2 className="text-4xl md:text-6xl font-bold text-white tracking-tighter mb-4 italic">WHAT PEOPLE <span className="text-neutral-500">SAY.</span></h2>

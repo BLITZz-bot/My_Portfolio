@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, User, LayoutDashboard, LogOut, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -23,6 +23,7 @@ export function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  const router = useRouter();
 
   const isAdmin = !!session?.user?.email && session?.user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
@@ -73,6 +74,23 @@ export function Navbar() {
     });
   };
 
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (pathname !== "/") {
+      // If we are on /projects, force a hard navigation to the home page with the hash
+      e.preventDefault();
+      setMobileMenuOpen(false);
+      router.push(href);
+    } else if (href.startsWith("/#")) {
+      // If we are already on home, let smooth scroll handle it
+      e.preventDefault();
+      const element = document.querySelector(href.substring(1));
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+        setMobileMenuOpen(false);
+      }
+    }
+  };
+
   // Don't show Navbar on admin pages
   // Moved after all hooks to comply with Rules of Hooks
   if (pathname?.startsWith("/admin")) return null;
@@ -89,6 +107,7 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         <Link 
           href="/" 
+          onClick={(e) => handleNavClick(e, "/")}
           className={cn(
             "text-xl font-bold tracking-tighter transition-colors duration-500",
             isScrolled ? "text-white" : "text-black"
@@ -103,6 +122,7 @@ export function Navbar() {
             <Link
               key={item.name}
               href={item.href}
+              onClick={(e) => handleNavClick(e, item.href)}
               className="text-sm font-medium text-neutral-400 hover:text-white transition-colors"
             >
               {item.name}

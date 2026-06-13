@@ -35,8 +35,8 @@ export function Hero() {
           className="absolute inset-0 opacity-[0.4]"
           style={{
             backgroundImage: `
-              linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px),
-              linear-gradient(to bottom, rgba(0,0,0,0.08) 1px, transparent 1px)
+              linear-gradient(to right, rgba(0,0,0,0.5) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(0,0,0,0.5) 1px, transparent 1px)
             `,
             backgroundSize: "60px 60px",
             maskImage: "linear-gradient(135deg, black 0%, transparent 80%)",
@@ -59,16 +59,16 @@ export function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          <span className="inline-block px-4 py-1.5 mb-6 text-xs font-bold uppercase tracking-widest bg-neutral-100 border border-neutral-200 rounded-full text-neutral-600">
+          <span className="inline-block px-4 py-1.5 mb-6 text-xs font-bold uppercase tracking-widest bg-neutral-900 border border-neutral-800 rounded-full text-neutral-400">
             Hello, Welcome to my portfolio
           </span>
           
-          <h1 className="text-5xl md:text-8xl font-bold tracking-tighter mb-8 leading-[0.9] text-neutral-950">
+          <h1 className="text-5xl md:text-8xl font-bold tracking-tighter mb-8 leading-[0.9]">
             FULL - STACK <span className="text-neutral-500">DEVELOPER</span><br />
             & COMPUTER SCIENCE STUDENT<span className="text-neutral-500">.</span>
           </h1>
           
-          <p className="max-w-xl mx-auto text-lg md:text-xl text-neutral-600 mb-10 leading-relaxed">
+          <p className="max-w-xl mx-auto text-lg md:text-xl text-neutral-400 mb-10 leading-relaxed">
             Building modern web applications, AI-powered tools,
             and real-world software solutions.
           </p>
@@ -77,7 +77,7 @@ export function Hero() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="px-8 py-4 bg-neutral-950 text-white font-bold rounded-full flex items-center gap-2 group hover:bg-neutral-800 transition-colors shadow-xl shadow-neutral-950/10"
+              className="px-8 py-4 bg-white text-black font-bold rounded-full flex items-center gap-2 group"
               onClick={() => document.getElementById("projects")?.scrollIntoView({ behavior: "smooth" })}
             >
               View My Work
@@ -92,7 +92,7 @@ export function Hero() {
                 target="_blank"
                 rel="noopener noreferrer"
                 download
-                className="px-8 py-4 bg-white text-black font-bold rounded-full border border-neutral-200 flex items-center gap-2 hover:bg-neutral-50 transition-all shadow-md cursor-pointer"
+                className="px-8 py-4 bg-neutral-900 text-white font-bold rounded-full border border-white/10 flex items-center gap-2 hover:bg-neutral-800 transition-all shadow-xl shadow-black/20 cursor-pointer"
               >
                 Download CV
                 <Download size={18} />
@@ -102,7 +102,7 @@ export function Hero() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={handleDownload}
-                className="px-8 py-4 bg-white text-black font-bold rounded-full border border-neutral-200 flex items-center gap-2 hover:bg-neutral-50 transition-all shadow-md"
+                className="px-8 py-4 bg-neutral-900 text-white font-bold rounded-full border border-white/10 flex items-center gap-2 hover:bg-neutral-800 transition-all shadow-xl shadow-black/20"
               >
                 Download CV
                 <Download size={18} />

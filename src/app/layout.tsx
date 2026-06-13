@@ -32,7 +32,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
       style={{ colorScheme: 'dark' }}
     >
-      <body className="min-h-full flex flex-col bg-neutral-950 text-neutral-50 selection:bg-neutral-50 selection:text-neutral-950 font-sans">
+      <body className="min-h-full flex flex-col bg-white text-neutral-950 selection:bg-neutral-900 selection:text-white font-sans">
         <Noise />
         <SmoothScroll>
           <Navbar />

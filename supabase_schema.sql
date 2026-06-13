@@ -53,3 +53,6 @@ CREATE POLICY "Allow public read of settings" ON portfolio_settings FOR SELECT U
 
 -- Allow authenticated users to read their own comments
 CREATE POLICY "Allow users to read their own comments" ON comments FOR SELECT TO authenticated USING (auth.uid() = user_id);
+
+-- Allow anyone to insert comments (which will default to approved = false for moderation)
+CREATE POLICY "Allow public insert of comments" ON comments FOR INSERT WITH CHECK (TRUE);

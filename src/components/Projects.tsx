@@ -172,7 +172,7 @@ export function Projects() {
                 
                 <div className="mt-6 flex justify-between items-start">
                   <div>
-                    <h3 className="text-xl font-bold group-hover:text-neutral-400 transition-colors">{project.title}</h3>
+                    <h3 className="text-xl font-bold text-white group-hover:text-neutral-400 transition-colors">{project.title}</h3>
                     <p className="text-sm text-neutral-500 mt-1 uppercase tracking-widest font-medium">{project.category}</p>
                   </div>
                 </div>

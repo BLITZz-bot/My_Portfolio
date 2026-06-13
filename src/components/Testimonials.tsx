@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, Star, Send, X, CheckCircle, Trash2, Check } from "lucide-react";
-import { submitComment, getApprovedComments, approveComment, deleteComment } from "@/app/actions/comments";
+import { MessageSquare, Send, X, CheckCircle } from "lucide-react";
+import { submitComment, getApprovedComments } from "@/app/actions/comments";
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
 
@@ -14,7 +14,6 @@ interface Comment {
   designation?: string;
   content: string;
   approved: boolean;
-  stars?: number;
 }
 
 export function Testimonials() {
@@ -26,9 +25,6 @@ export function Testimonials() {
   const [showToast, setShowToast] = useState(false);
   const [dbComments, setDbComments] = useState<Comment[]>([]);
   
-  // Use env var for admin check. User should set NEXT_PUBLIC_ADMIN_EMAIL in .env
-  const isAdmin = !!session?.user?.email && session?.user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-
   const fetchComments = async () => {
     const comments = await getApprovedComments();
     if (comments) {
@@ -115,24 +111,6 @@ export function Testimonials() {
     }
   };
 
-  const handleApprove = async (id: string) => {
-    if (!session?.user?.email) return;
-    const result = await approveComment(id, session.user.email);
-    if (result.success) {
-      fetchComments();
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!session?.user?.email) return;
-    if (confirm("Are you sure you want to delete this recommendation?")) {
-      const result = await deleteComment(id, session.user.email);
-      if (result.success) {
-        fetchComments();
-      }
-    }
-  };
-
   const displayComments = dbComments.length > 0 
     ? dbComments 
     : [
@@ -142,7 +120,6 @@ export function Testimonials() {
           role: "CEO, TechFlow",
           designation: "Founder",
           content: "The attention to detail and animation quality is outstanding. One of the best developers I've worked with.",
-          stars: 5,
           approved: true,
         },
         {
@@ -151,7 +128,6 @@ export function Testimonials() {
           role: "Art Director, Creative Labs",
           designation: "Principal",
           content: "Transformed our vision into a fluid, interactive reality. The performance on mobile is particularly impressive.",
-          stars: 5,
           approved: true,
         },
       ];
@@ -178,37 +154,12 @@ export function Testimonials() {
                   viewport={{ once: true }}
                   className="p-8 rounded-3xl bg-neutral-900/50 backdrop-blur-md border border-neutral-800 relative group"
                 >
-                  <div className="flex gap-1 mb-4 text-yellow-500">
-                    {[...Array(t.stars || 5)].map((_, i) => <Star key={i} size={16} fill="currentColor" />)}
-                  </div>
                   <p className="text-lg text-neutral-300 mb-6 italic">&quot;{t.content}&quot;</p>
                   <div className="flex justify-between items-end">
                     <div>
                       <h4 className="font-bold text-white">{t.name}</h4>
                       <p className="text-sm text-neutral-500">{t.designation ? `${t.designation} @ ` : ""}{t.role}</p>
                     </div>
-                    
-                    {/* Admin Controls */}
-                    {isAdmin && (
-                      <div className="flex gap-2">
-                        {!t.approved && (
-                          <button 
-                            onClick={() => handleApprove(t.id)}
-                            className="p-2 bg-green-500/10 text-green-500 rounded-full hover:bg-green-500/20 transition-colors"
-                            title="Approve"
-                          >
-                            <Check size={16} />
-                          </button>
-                        )}
-                        <button 
-                          onClick={() => handleDelete(t.id)}
-                          className="p-2 bg-red-500/10 text-red-500 rounded-full hover:bg-red-500/20 transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    )}
                   </div>
                 </motion.div>
               ))}
@@ -373,14 +324,13 @@ export function Testimonials() {
                       transition={{ delay: 0.3 }}
                       className="space-y-1.5"
                     >
-                      <label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">Email Address</label>
+                      <label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">Email Address (Google Verified)</label>
                       <input 
                         required
                         type="email"
                         value={formData.email}
-                        onChange={(e) => setFormData({...formData, email: e.target.value})}
-                        className="w-full bg-neutral-950 border border-white/5 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-white/20 transition-all placeholder:text-neutral-700 text-white"
-                        placeholder="john@example.com"
+                        readOnly
+                        className="w-full bg-neutral-950/50 border border-white/5 rounded-2xl px-5 py-4 text-sm focus:outline-none text-neutral-500 cursor-not-allowed"
                       />
                     </motion.div>
                     

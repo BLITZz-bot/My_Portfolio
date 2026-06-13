@@ -23,6 +23,22 @@ export async function getApprovedComments() {
   return data;
 }
 
+export async function getAllComments() {
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("comments")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching all comments:", error);
+    return [];
+  }
+
+  return data;
+}
+
 export async function submitComment(formData: {
   name: string;
   email: string;
@@ -53,7 +69,9 @@ export async function submitComment(formData: {
 
 // Admin Action: Approve Comment
 export async function approveComment(commentId: string, adminEmail: string) {
-  if (adminEmail !== process.env.ADMIN_EMAIL) {
+  const allowedEmail = process.env.ADMIN_EMAIL || process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  
+  if (adminEmail !== allowedEmail) {
     return { success: false, error: "Unauthorized" };
   }
 
@@ -72,7 +90,9 @@ export async function approveComment(commentId: string, adminEmail: string) {
 
 // Admin Action: Delete/Reject Comment
 export async function deleteComment(commentId: string, adminEmail: string) {
-  if (adminEmail !== process.env.ADMIN_EMAIL) {
+  const allowedEmail = process.env.ADMIN_EMAIL || process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  
+  if (adminEmail !== allowedEmail) {
     return { success: false, error: "Unauthorized" };
   }
 

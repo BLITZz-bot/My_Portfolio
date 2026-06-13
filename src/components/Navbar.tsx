@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, User, LayoutDashboard, LogOut, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -21,8 +22,14 @@ export function Navbar() {
   const [session, setSession] = useState<Session | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
 
   const isAdmin = !!session?.user?.email && session?.user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+
+  const avatarUrl = 
+    session?.user?.user_metadata?.avatar_url || 
+    session?.user?.user_metadata?.picture || 
+    session?.user?.identities?.[0]?.identity_data?.avatar_url;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -66,6 +73,10 @@ export function Navbar() {
     });
   };
 
+  // Don't show Navbar on admin pages
+  // Moved after all hooks to comply with Rules of Hooks
+  if (pathname?.startsWith("/admin")) return null;
+
   return (
     <nav
       className={cn(
@@ -78,7 +89,7 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         <Link 
           href="/" 
-          className="text-xl font-bold tracking-tighter text-white"
+          className="text-xl font-bold tracking-tighter text-black"
         >
           M M <span className="text-neutral-500">BHARATH</span>
         </Link>
@@ -103,9 +114,9 @@ export function Navbar() {
               onClick={() => session ? setIsDropdownOpen(!isDropdownOpen) : handleSignIn()}
               className="flex items-center justify-center w-9 h-9 rounded-full border border-white/10 bg-neutral-900 overflow-hidden hover:border-white/30 transition-all group"
             >
-              {session?.user?.user_metadata?.avatar_url ? (
+              {avatarUrl ? (
                 <img 
-                  src={session.user.user_metadata.avatar_url} 
+                  src={avatarUrl} 
                   alt="Profile" 
                   className="w-full h-full object-cover"
                 />
@@ -137,14 +148,6 @@ export function Navbar() {
                       Admin Dashboard
                     </Link>
                   )}
-                  
-                  <button 
-                    onClick={() => setIsDropdownOpen(false)}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-neutral-300 hover:bg-white/5 hover:text-white rounded-xl transition-all font-medium"
-                  >
-                    <Settings size={16} />
-                    Profile Settings
-                  </button>
                   
                   <div className="h-[1px] bg-white/5 my-2" />
                   
@@ -196,8 +199,8 @@ export function Navbar() {
               <>
                 <div className="flex items-center gap-3 px-2 mb-2">
                   <div className="w-10 h-10 rounded-full border border-white/10 bg-neutral-900 overflow-hidden">
-                    {session.user.user_metadata?.avatar_url ? (
-                      <img src={session.user.user_metadata.avatar_url} alt="" className="w-full h-full object-cover" />
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center"><User size={20} className="text-neutral-500" /></div>
                     )}

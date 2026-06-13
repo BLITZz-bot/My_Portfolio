@@ -2,19 +2,30 @@
 
 import { motion, useInView, animate } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
-import { Code2, Palette, Globe2, Zap } from "lucide-react";
+import { Code2, Palette, Globe2, Zap, Sparkles, User, Trophy, Medal, Rocket, Terminal, Fingerprint } from "lucide-react";
 import { Github, Twitter, Linkedin } from "@/components/Icons";
 import { cn } from "@/lib/utils";
 import { getSettings } from "@/app/actions/admin";
 
-const skills = [
-  { name: "React / Next.js", icon: Code2, color: "text-blue-400" },
-  { name: "TypeScript", icon: Zap, color: "text-yellow-400" },
-  { name: "Tailwind CSS", icon: Palette, color: "text-cyan-400" },
-  { name: "Three.js", icon: Globe2, color: "text-indigo-400" },
-];
+const skillIconMap: Record<string, { icon: any, color: string }> = {
+  "react": { icon: Code2, color: "text-blue-400" },
+  "next": { icon: Code2, color: "text-blue-400" },
+  "typescript": { icon: Zap, color: "text-yellow-400" },
+  "tailwind": { icon: Palette, color: "text-cyan-400" },
+  "three": { icon: Globe2, color: "text-indigo-400" },
+  "node": { icon: Code2, color: "text-green-400" },
+  "default": { icon: Code2, color: "text-neutral-400" }
+};
 
-function AnimatedStat({ value, suffix, label, delay = 0 }: { value: number, suffix: string, label: string, delay?: number }) {
+const getSkillConfig = (name: string) => {
+  const lowerName = name.toLowerCase();
+  for (const key in skillIconMap) {
+    if (lowerName.includes(key)) return skillIconMap[key];
+  }
+  return skillIconMap.default;
+};
+
+function AnimatedStat({ value, suffix, label, delay = 0, icon: Icon }: { value: number, suffix: string, label: string, delay?: number, icon: any }) {
   const [count, setCount] = useState(0);
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-50px" });
@@ -22,20 +33,13 @@ function AnimatedStat({ value, suffix, label, delay = 0 }: { value: number, suff
 
   useEffect(() => {
     if (isInView) {
-      // Dynamic duration: small numbers count slightly faster so they don't feel stuck
       const duration = value < 5 ? 1 : 1.5; 
-
       const controls = animate(0, value, {
         duration: duration,
         ease: "easeOut",
-        onUpdate: (latestValue) => {
-          setCount(Math.round(latestValue));
-        },
-        onComplete: () => {
-          setIsDone(true);
-        }
+        onUpdate: (latestValue) => setCount(Math.round(latestValue)),
+        onComplete: () => setIsDone(true)
       });
-
       return () => controls.stop();
     }
   }, [isInView, value]);
@@ -46,19 +50,24 @@ function AnimatedStat({ value, suffix, label, delay = 0 }: { value: number, suff
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
       whileInView={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.5, delay }}
-      whileHover={{ y: -5, boxShadow: "0 10px 30px -10px rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.3)" }}
+      whileHover={{ y: -5, boxShadow: "0 10px 30px -10px rgba(255,255,255,0.1)", borderColor: "rgba(255,255,255,0.2)" }}
       viewport={{ once: true }}
-      className="p-6 rounded-3xl bg-neutral-900/50 backdrop-blur-md border border-neutral-800 flex flex-col justify-center items-center text-center transition-all duration-300 flex-1 w-full"
+      className="p-6 rounded-3xl bg-neutral-900 border border-neutral-800 flex flex-col justify-center items-center text-center transition-all duration-300 flex-1 w-full relative overflow-hidden group/stat"
     >
-      <motion.div 
-        animate={ isDone ? { scale: [1, 1.1, 1] } : {}}
-        transition={{ duration: 0.4 }}
-        className="text-4xl md:text-5xl font-bold mb-2 tracking-tighter italic text-white"
-        style={{ textShadow: "0 0 20px rgba(255,255,255,0.3)" }}
-      >
-        {count}{suffix}
-      </motion.div>
-      <div className="text-xs font-bold uppercase tracking-widest text-neutral-500">{label}</div>
+      <div className="relative z-10">
+        <motion.div 
+          animate={ isDone ? { scale: [1, 1.1, 1] } : {}}
+          transition={{ duration: 0.4 }}
+          className="text-4xl md:text-5xl font-bold mb-2 tracking-tighter italic text-white"
+          style={{ textShadow: "0 0 20px rgba(255,255,255,0.3)" }}
+        >
+          {count}{suffix}
+        </motion.div>
+        <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">{label}</div>
+      </div>
+      <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover/stat:opacity-[0.08] group-hover/stat:scale-110 transition-all duration-700 pointer-events-none">
+        <Icon size={120} className="text-white" />
+      </div>
     </motion.div>
   );
 }
@@ -69,15 +78,15 @@ export function About() {
     projects_built: 12,
     hackathons_won: 4,
     awards_won: 1,
-    location: "Bangkok, Thailand",
-    location_status: "Working remotely worldwide."
+    skills: ["React / Next.js", "TypeScript", "Tailwind CSS", "Three.js"],
+    vision_text: "Passionate about photography, exploring new tech stacks, and dreaming of building an AI-driven platform that makes education accessible to everyone worldwide."
   });
 
   useEffect(() => {
     const loadData = async () => {
       const settings = await getSettings();
       if (settings) {
-        setData(settings);
+        setData(settings as any);
       }
     };
     loadData();
@@ -87,40 +96,73 @@ export function About() {
     <section id="about" className="py-24 px-6 bg-neutral-950">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row gap-6">
-          {/* Main Bento Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
-            {/* Bio Card */}
+            {/* Identity Card - NEW DESIGN */}
             <motion.div 
               whileInView={{ opacity: 1, y: 0 }}
               initial={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.5 }}
               viewport={{ once: true }}
-              className="md:col-span-2 p-8 rounded-3xl bg-neutral-900 border border-neutral-800 flex flex-col justify-between"
+              className="md:col-span-2 p-10 rounded-[40px] bg-neutral-900 border border-neutral-800 flex flex-col justify-between relative overflow-hidden group/id"
             >
-              <div>
-                <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">ABOUT <span className="text-neutral-500">ME</span></h2>
-                <p className="text-neutral-400 text-lg leading-relaxed">
-                 {data.about_text}
-                </p>
+              {/* Subtle Tech Grid Background */}
+              <div 
+                className="absolute inset-0 opacity-[0.03] pointer-events-none"
+                style={{ 
+                  backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)`,
+                  backgroundSize: '24px 24px'
+                }}
+              />
+              
+              {/* Hover Spotlight Glow */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_var(--mouse-x,50%)_var(--mouse-y,50%),rgba(255,255,255,0.03)_0%,transparent_50%)] group-hover/id:opacity-100 opacity-0 transition-opacity duration-500 pointer-events-none" />
+
+              <div className="relative z-10 flex flex-col md:flex-row gap-8">
+                {/* Vertical Side Tab */}
+                <div className="hidden md:flex flex-col items-center justify-between py-2">
+                  <div className="w-[1px] h-full bg-gradient-to-b from-transparent via-neutral-800 to-transparent" />
+                  <span className="[writing-mode:vertical-lr] text-[10px] font-bold uppercase tracking-[0.5em] text-neutral-600 rotate-180 py-4">Profile</span>
+                  <div className="w-[1px] h-full bg-gradient-to-b from-transparent via-neutral-800 to-transparent" />
+                </div>
+
+                <div className="flex-1">
+                  <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">ABOUT <span className="text-neutral-500">ME</span></h2>
+                  <p className="text-neutral-400 text-lg leading-relaxed">
+                    {data.about_text}
+                  </p>
+                  
+                  <div className="mt-12 flex items-center gap-6">
+                    <div className="flex gap-3">
+                      <a href="#" className="w-11 h-11 rounded-xl bg-neutral-800 flex items-center justify-center text-neutral-400 hover:text-white hover:bg-neutral-700 transition-all border border-white/5 hover:border-white/10">
+                        <Github size={18} />
+                      </a>
+                      <a href="#" className="w-11 h-11 rounded-xl bg-neutral-800 flex items-center justify-center text-neutral-400 hover:text-white hover:bg-neutral-700 transition-all border border-white/5 hover:border-white/10">
+                        <Twitter size={18} />
+                      </a>
+                      <a href="#" className="w-11 h-11 rounded-xl bg-neutral-800 flex items-center justify-center text-neutral-400 hover:text-white hover:bg-neutral-700 transition-all border border-white/5 hover:border-white/10">
+                        <Linkedin size={18} />
+                      </a>
+                    </div>
+                    <div className="h-4 w-px bg-white/10" />
+                    <div className="flex items-center gap-2 text-neutral-500 text-[10px] font-bold uppercase tracking-widest">
+                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                      Available for Projects
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="mt-8 flex gap-4">
-                <a href="#" className="p-3 rounded-full bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700 transition-all">
-                  <Github size={20} />
-                </a>
-                <a href="#" className="p-3 rounded-full bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700 transition-all">
-                  <Twitter size={20} />
-                </a>
-                <a href="#" className="p-3 rounded-full bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700 transition-all">
-                  <Linkedin size={20} />
-                </a>
+
+              {/* Watermark Fingerprint */}
+              <div className="absolute -right-12 -bottom-12 opacity-[0.04] group-hover/id:opacity-[0.08] group-hover/id:scale-105 group-hover/id:-rotate-12 transition-all duration-1000 pointer-events-none">
+                <Fingerprint size={380} className="text-white" />
               </div>
             </motion.div>
 
             {/* Stats Column */}
             <div className="flex flex-col gap-6 h-full">
-              <AnimatedStat value={data.projects_built} suffix="+" label="Projects Built" delay={0.1} />
-              <AnimatedStat value={data.hackathons_won} suffix="x" label="Hackathon Winner" delay={0.2} />
-              <AnimatedStat value={data.awards_won} suffix="x" label="Best Implementation Award" delay={0.3} />
+              <AnimatedStat value={data.projects_built} suffix="+" label="Projects Built" delay={0.1} icon={Rocket} />
+              <AnimatedStat value={data.hackathons_won} suffix="x" label="Hackathon Winner" delay={0.2} icon={Trophy} />
+              <AnimatedStat value={data.awards_won} suffix="x" label="Innovation Awards" delay={0.3} icon={Medal} />
             </div>
 
             {/* Skills Card */}
@@ -129,36 +171,45 @@ export function About() {
               initial={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.5, delay: 0.2 }}
               viewport={{ once: true }}
-              className="p-8 rounded-3xl bg-neutral-900 border border-neutral-800"
+              className="p-10 rounded-[32px] bg-neutral-900 border border-neutral-800 relative overflow-hidden group"
             >
-              <h3 className="text-sm font-bold uppercase tracking-widest text-neutral-500 mb-6">Expertise</h3>
-              <div className="space-y-4">
-                {skills.map((skill) => (
-                  <div key={skill.name} className="flex items-center gap-4">
-                    <div className={cn("p-2 rounded-lg bg-neutral-800", skill.color)}>
-                      <skill.icon size={18} />
-                    </div>
-                    <span className="font-medium">{skill.name}</span>
-                  </div>
-                ))}
+              <div className="relative z-10">
+                <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-neutral-500 mb-8">Expertise</h3>
+                <div className="space-y-5">
+                  {(data.skills || []).map((skillName: string) => {
+                    const config = getSkillConfig(skillName);
+                    return (
+                      <div key={skillName} className="flex items-center gap-4 group/skill">
+                        <div className={cn("p-3 rounded-xl bg-neutral-800 border border-white/5 transition-transform group-hover/skill:scale-110 duration-300", config.color)}>
+                          <config.icon size={18} />
+                        </div>
+                        <span className="font-bold text-white tracking-tight">{skillName}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="absolute -right-16 -bottom-16 opacity-[0.03] group-hover:opacity-[0.07] group-hover:scale-110 transition-all duration-1000 pointer-events-none">
+                <Terminal size={350} className="text-white" />
               </div>
             </motion.div>
 
-            {/* Location Card */}
+            {/* Vision & Vibes Card */}
             <motion.div 
               whileInView={{ opacity: 1, y: 0 }}
               initial={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.5, delay: 0.3 }}
               viewport={{ once: true }}
-              className="md:col-span-2 p-8 rounded-3xl bg-neutral-900 border border-neutral-800 flex flex-col justify-between overflow-hidden relative group"
+              className="md:col-span-2 p-10 rounded-[32px] bg-neutral-900 border border-neutral-800 flex flex-col justify-between overflow-hidden relative group"
             >
               <div className="relative z-10">
-                <h3 className="text-sm font-bold uppercase tracking-widest text-neutral-500 mb-2">Location</h3>
-                <div className="text-2xl font-bold">{data.location}</div>
-                <p className="text-neutral-500 mt-2 italic text-sm">{data.location_status}</p>
+                <h3 className="text-3xl font-bold text-white mb-4 tracking-tight uppercase">ACHIEVEMENT & <span className="text-neutral-500">HOBBIES</span></h3>
+                <p className="text-neutral-400 text-lg leading-relaxed">
+                  {data.vision_text}
+                </p>
               </div>
-              <div className="absolute top-0 right-0 w-full h-full opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-700">
-                <Globe2 size={400} className="absolute -right-20 -bottom-20" />
+              <div className="absolute -right-20 -bottom-20 opacity-[0.05] group-hover:opacity-[0.1] group-hover:scale-110 transition-all duration-1000 pointer-events-none">
+                <Sparkles size={450} className="text-white" />
               </div>
             </motion.div>
           </div>

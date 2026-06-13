@@ -2,8 +2,30 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight, Download, ChevronDown } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getSettings } from "@/app/actions/admin";
 
 export function Hero() {
+  const [resumeUrl, setResumeUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const settings = await getSettings();
+      if (settings && (settings as any).resume_url) {
+        setResumeUrl((settings as any).resume_url);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const handleDownload = () => {
+    if (resumeUrl) {
+      window.open(resumeUrl, "_blank");
+    } else {
+      alert("Resume not yet uploaded by Admin.");
+    }
+  };
+
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
       {/* Background Decorative Elements */}
@@ -37,6 +59,7 @@ export function Hero() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="px-8 py-4 bg-white text-black font-bold rounded-full flex items-center gap-2 group"
+              onClick={() => document.getElementById("projects")?.scrollIntoView({ behavior: "smooth" })}
             >
               View My Work
               <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
@@ -45,7 +68,8 @@ export function Hero() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="px-8 py-4 bg-neutral-900 text-white font-bold rounded-full border border-neutral-800 flex items-center gap-2"
+              onClick={handleDownload}
+              className="px-8 py-4 bg-neutral-900 text-white font-bold rounded-full border border-white/10 flex items-center gap-2 hover:bg-neutral-800 transition-all shadow-xl shadow-black/20"
             >
               Download CV
               <Download size={18} />

@@ -10,6 +10,11 @@ function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+  console.log("getAdminClient initialization in admin.ts:", {
+    hasUrl: !!url,
+    hasKey: !!key,
+  });
+
   if (!url || !key) {
     throw new Error("Supabase Admin credentials (SUPABASE_SERVICE_ROLE_KEY) are missing in environment variables.");
   }

@@ -78,7 +78,7 @@ export function About() {
     projects_built: 12,
     hackathons_won: 4,
     awards_won: 1,
-    skills: ["React / Next.js", "TypeScript", "Tailwind CSS", "Three.js"],
+    skills: [],
     vision_text: "Passionate about photography, exploring new tech stacks, and dreaming of building an AI-driven platform that makes education accessible to everyone worldwide."
   });
 
@@ -127,7 +127,7 @@ export function About() {
 
                 <div className="flex-1">
                   <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">ABOUT <span className="text-neutral-500">ME</span></h2>
-                  <p className="text-neutral-400 text-lg leading-relaxed">
+                  <p className="text-neutral-400 text-lg leading-relaxed whitespace-pre-line">
                     {data.about_text}
                   </p>
                   
@@ -183,17 +183,21 @@ export function About() {
               <div className="relative z-10">
                 <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-neutral-500 mb-8">Expertise</h3>
                 <div className="space-y-5">
-                  {(data.skills || []).map((skillName: string) => {
-                    const config = getSkillConfig(skillName);
-                    return (
-                      <div key={skillName} className="flex items-center gap-4 group/skill">
-                        <div className={cn("p-3 rounded-xl bg-neutral-800 border border-white/5 transition-transform group-hover/skill:scale-110 duration-300", config.color)}>
-                          <config.icon size={18} />
+                  {(data.skills || []).length === 0 ? (
+                    <p className="text-neutral-500 text-sm italic">No expertise added yet.</p>
+                  ) : (
+                    (data.skills || []).map((skillName: string) => {
+                      const config = getSkillConfig(skillName);
+                      return (
+                        <div key={skillName} className="flex items-center gap-4 group/skill">
+                          <div className={cn("p-3 rounded-xl bg-neutral-800 border border-white/5 transition-transform group-hover/skill:scale-110 duration-300", config.color)}>
+                            <config.icon size={18} />
+                          </div>
+                          <span className="font-bold text-white tracking-tight">{skillName}</span>
                         </div>
-                        <span className="font-bold text-white tracking-tight">{skillName}</span>
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  )}
                 </div>
               </div>
               <div className="absolute -right-16 -bottom-16 opacity-[0.03] group-hover:opacity-[0.07] group-hover:scale-110 transition-all duration-1000 pointer-events-none">
@@ -211,7 +215,7 @@ export function About() {
             >
               <div className="relative z-10">
                 <h3 className="text-3xl font-bold text-white mb-4 tracking-tight uppercase">ACHIEVEMENT & <span className="text-neutral-500">HOBBIES</span></h3>
-                <p className="text-neutral-400 text-lg leading-relaxed">
+                <p className="text-neutral-400 text-lg leading-relaxed whitespace-pre-line">
                   {data.vision_text}
                 </p>
               </div>

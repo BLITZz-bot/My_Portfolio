@@ -70,7 +70,7 @@ export default function AdminDashboard() {
     projects_built: 12,
     hackathons_won: 4,
     awards_won: 1,
-    skills: ["React / Next.js", "TypeScript", "Tailwind CSS", "Three.js"],
+    skills: [],
     vision_text: "Passionate about photography, exploring new tech stacks, and dreaming of building an AI-driven platform that makes education accessible to everyone worldwide.",
     resume_url: ""
   });
@@ -613,7 +613,7 @@ export default function AdminDashboard() {
                     <div className="space-y-8 p-10 bg-neutral-900/50 border border-white/5 rounded-[32px] backdrop-blur-md">
                       <div className="space-y-2">
                         <label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">About Bio Text</label>
-                        <p className="text-neutral-300 leading-relaxed bg-neutral-950/50 border border-white/5 rounded-2xl px-6 py-5 min-h-[120px]">
+                        <p className="text-neutral-300 leading-relaxed bg-neutral-950/50 border border-white/5 rounded-2xl px-6 py-5 min-h-[120px] whitespace-pre-line">
                           {settingsData.about_text}
                         </p>
                       </div>
@@ -656,7 +656,7 @@ export default function AdminDashboard() {
 
                       <div className="space-y-2">
                         <label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">Vision & Vibes</label>
-                        <p className="text-xl font-medium text-neutral-200 leading-relaxed bg-neutral-950/50 border border-white/5 rounded-2xl px-6 py-5 italic">
+                        <p className="text-xl font-medium text-neutral-200 leading-relaxed bg-neutral-950/50 border border-white/5 rounded-2xl px-6 py-5 italic whitespace-pre-line">
                           {settingsData.vision_text}
                         </p>
                       </div>

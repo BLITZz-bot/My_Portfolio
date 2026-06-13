@@ -10,7 +10,7 @@ export default function Home() {
       <Hero />
       <div className="relative overflow-hidden bg-neutral-950">
         {/* Continuous Grain and Depth backdrop for all dark sections */}
-        <Noise patternAlpha={15} />
+        <Noise />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(0,0,0,0.85)_100%)] pointer-events-none" />
         
         <div className="relative z-10">

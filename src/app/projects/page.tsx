@@ -81,7 +81,7 @@ export default function ProjectsPage() {
   return (
     <div className="min-h-screen bg-neutral-950 pt-32 pb-24 px-6 relative overflow-hidden">
       {/* Grainy Noise Background */}
-      <Noise patternAlpha={15} />
+      <Noise />
 
       {/* Radial Vignette for depth */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(0,0,0,0.85)_100%)] pointer-events-none" />

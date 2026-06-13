@@ -16,7 +16,8 @@ import {
   Pencil,
   MessageSquare,
   Check,
-  XCircle
+  XCircle,
+  Download
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";

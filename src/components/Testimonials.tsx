@@ -17,6 +17,19 @@ interface Comment {
   approved: boolean;
 }
 
+const CommentSkeleton = () => (
+  <div className="p-8 rounded-3xl bg-neutral-900/30 border border-neutral-800/40 animate-pulse space-y-4">
+    <div className="h-4 w-5/6 bg-neutral-900 rounded-md" />
+    <div className="h-4 w-4/6 bg-neutral-900 rounded-md" />
+    <div className="flex justify-between items-end pt-4">
+      <div className="space-y-2 w-1/3">
+        <div className="h-5 bg-neutral-900 rounded-md" />
+        <div className="h-3 w-2/3 bg-neutral-900 rounded-md" />
+      </div>
+    </div>
+  </div>
+);
+
 export function Testimonials() {
   const [formData, setFormData] = useState({ name: "", email: "", role: "Client", designation: "", content: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,11 +38,19 @@ export function Testimonials() {
   const [session, setSession] = useState<Session | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [dbComments, setDbComments] = useState<Comment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   const fetchComments = async () => {
-    const comments = await getApprovedComments();
-    if (comments) {
-      setDbComments(comments);
+    setIsLoading(true);
+    try {
+      const comments = await getApprovedComments();
+      if (comments) {
+        setDbComments(comments);
+      }
+    } catch (e) {
+      console.error("Error fetching comments:", e);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -144,7 +165,12 @@ export function Testimonials() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
           {/* Left Side: Display Testimonials */}
           <div>
-            {displayComments.length === 0 ? (
+            {isLoading ? (
+              <div className="space-y-6">
+                <CommentSkeleton />
+                <CommentSkeleton />
+              </div>
+            ) : displayComments.length === 0 ? (
               <div className="p-8 rounded-3xl bg-neutral-900/40 border border-white/5 backdrop-blur-sm text-center py-16">
                 <p className="text-neutral-500 font-bold uppercase tracking-widest text-xs">No recommendations yet.</p>
                 <p className="text-neutral-600 text-sm mt-2">Be the first to leave feedback on our collaboration!</p>

@@ -8,10 +8,10 @@ import { supabase, verifyAdmin } from "@/lib/supabase"; // Import standard clien
 // Helper to get a privileged client only when needed for writes
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_SERVICE_KEY;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !key) {
-    throw new Error("Supabase Admin credentials (SUPABASE_SERVICE_ROLE_KEY) are missing in .env");
+    throw new Error("Supabase Admin credentials (SUPABASE_SERVICE_ROLE_KEY) are missing in environment variables.");
   }
 
   return createClient(url, key);

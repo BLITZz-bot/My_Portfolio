@@ -15,14 +15,35 @@ interface Comment {
   approved: boolean;
 }
 
+const CommentSkeleton = () => (
+  <div className="p-8 rounded-3xl bg-neutral-900/30 border border-neutral-800/40 animate-pulse space-y-4">
+    <div className="h-4 w-5/6 bg-neutral-900 rounded-md" />
+    <div className="h-4 w-4/6 bg-neutral-900 rounded-md" />
+    <div className="flex justify-between items-end pt-4">
+      <div className="space-y-2 w-1/3">
+        <div className="h-5 bg-neutral-900 rounded-md" />
+        <div className="h-3 w-2/3 bg-neutral-900 rounded-md" />
+      </div>
+    </div>
+  </div>
+);
+
 export default function CommentsPage() {
   const [dbComments, setDbComments] = useState<Comment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadComments = async () => {
-      const data = await getApprovedComments();
-      if (data) {
-        setDbComments(data as Comment[]);
+      setIsLoading(true);
+      try {
+        const data = await getApprovedComments();
+        if (data) {
+          setDbComments(data as Comment[]);
+        }
+      } catch (e) {
+        console.error("Error loading comments:", e);
+      } finally {
+        setIsLoading(false);
       }
     };
     loadComments();
@@ -56,7 +77,14 @@ export default function CommentsPage() {
         </div>
 
         {/* Grid */}
-        {dbComments.length === 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <CommentSkeleton />
+            <CommentSkeleton />
+            <CommentSkeleton />
+            <CommentSkeleton />
+          </div>
+        ) : dbComments.length === 0 ? (
           <div className="w-full text-center py-32 bg-neutral-900/40 border border-white/5 rounded-[40px] backdrop-blur-sm">
             <p className="text-neutral-500 font-bold uppercase tracking-widest text-sm">No recommendations yet.</p>
             <p className="text-neutral-600 text-sm mt-2">No feedback has been published yet.</p>

@@ -7,12 +7,24 @@ import { Github } from "@/components/Icons";
 import { projects as staticProjects, Project } from "@/lib/projects";
 import Link from "next/link";
 import { getProjects } from "@/app/actions/admin";
+import Image from "next/image";
+
+const ProjectSkeleton = () => (
+  <div className="animate-pulse">
+    <div className="aspect-video w-full rounded-3xl bg-neutral-900 border border-neutral-800/40" />
+    <div className="mt-6 space-y-2">
+      <div className="h-6 w-2/3 bg-neutral-900 rounded-lg" />
+      <div className="h-4 w-1/4 bg-neutral-900 rounded-lg" />
+    </div>
+  </div>
+);
 
 export default function ProjectsPage() {
   const [dbProjects, setDbProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -24,9 +36,16 @@ export default function ProjectsPage() {
   }, []);
 
   const fetchProjectsData = async () => {
-    const data = await getProjects();
-    if (data && data.length > 0) {
-      setDbProjects(data as unknown as Project[]);
+    setIsLoading(true);
+    try {
+      const data = await getProjects();
+      if (data && data.length > 0) {
+        setDbProjects(data as unknown as Project[]);
+      }
+    } catch (e) {
+      console.error("Error fetching projects:", e);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -86,7 +105,13 @@ export default function ProjectsPage() {
         </div>
 
         {/* Grid */}
-        {displayProjects.length === 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <ProjectSkeleton />
+            <ProjectSkeleton />
+            <ProjectSkeleton />
+          </div>
+        ) : displayProjects.length === 0 ? (
           <div className="w-full text-center py-32 bg-neutral-900/40 border border-white/5 rounded-[40px] backdrop-blur-sm">
             <p className="text-neutral-500 font-bold uppercase tracking-widest text-sm">Project vault is empty.</p>
             <p className="text-neutral-600 text-sm mt-2">No projects have been published yet.</p>
@@ -110,10 +135,12 @@ export default function ProjectsPage() {
                     }
                   }}
                 >
-                  <img 
+                  <Image 
                     src={project.thumbnail} 
                     alt={project.title}
-                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
                   />
                   
                   {/* Overlay */}

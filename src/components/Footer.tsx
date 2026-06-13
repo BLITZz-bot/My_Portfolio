@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { Github, Linkedin } from "@/components/Icons";
+import Link from "next/link";
 
 export function Footer() {
   const pathname = usePathname();
@@ -43,9 +44,10 @@ export function Footer() {
         <div className="flex flex-col gap-4">
           <h3 className="text-xs font-bold uppercase tracking-widest text-neutral-500">Links</h3>
           <div className="flex flex-col gap-3">
-            <a href="#" className="text-sm text-neutral-400 hover:text-white transition-colors">Home</a>
-            <a href="#about" className="text-sm text-neutral-400 hover:text-white transition-colors">About</a>
-            <a href="#projects" className="text-sm text-neutral-400 hover:text-white transition-colors">Projects</a>
+            <Link href="/" className="text-sm text-neutral-400 hover:text-white transition-colors">Home</Link>
+            <Link href="/#about" className="text-sm text-neutral-400 hover:text-white transition-colors">About</Link>
+            <Link href="/#projects" className="text-sm text-neutral-400 hover:text-white transition-colors">Projects</Link>
+            <Link href="/#recommendations" className="text-sm text-neutral-400 hover:text-white transition-colors">Recommendations</Link>
           </div>
         </div>
       </div>

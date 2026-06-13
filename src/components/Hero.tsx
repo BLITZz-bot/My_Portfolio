@@ -84,15 +84,30 @@ export function Hero() {
               <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </motion.button>
             
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleDownload}
-              className="px-8 py-4 bg-neutral-900 text-white font-bold rounded-full border border-white/10 flex items-center gap-2 hover:bg-neutral-800 transition-all shadow-xl shadow-black/20"
-            >
-              Download CV
-              <Download size={18} />
-            </motion.button>
+            {resumeUrl ? (
+              <motion.a
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                href={resumeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                download
+                className="px-8 py-4 bg-neutral-900 text-white font-bold rounded-full border border-white/10 flex items-center gap-2 hover:bg-neutral-800 transition-all shadow-xl shadow-black/20 cursor-pointer"
+              >
+                Download CV
+                <Download size={18} />
+              </motion.a>
+            ) : (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleDownload}
+                className="px-8 py-4 bg-neutral-900 text-white font-bold rounded-full border border-white/10 flex items-center gap-2 hover:bg-neutral-800 transition-all shadow-xl shadow-black/20"
+              >
+                Download CV
+                <Download size={18} />
+              </motion.button>
+            )}
           </div>
         </motion.div>
       </div>

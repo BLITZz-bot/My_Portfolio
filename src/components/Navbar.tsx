@@ -80,6 +80,11 @@ export function Navbar() {
       e.preventDefault();
       setMobileMenuOpen(false);
       router.push(href);
+    } else if (href === "/") {
+      // If we are already on home and click "Home", scroll to top
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      setMobileMenuOpen(false);
     } else if (href.startsWith("/#")) {
       // If we are already on home, let smooth scroll handle it
       e.preventDefault();
@@ -210,7 +215,7 @@ export function Navbar() {
                 key={item.name}
                 href={item.href}
                 className="text-lg font-medium text-neutral-400 hover:text-white"
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={(e) => handleNavClick(e, item.href)}
               >
                 {item.name}
               </Link>

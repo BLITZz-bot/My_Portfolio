@@ -3,7 +3,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { Project } from "@/lib/projects";
-import { supabase } from "@/lib/supabase"; // Import standard client for public reads
+import { supabase, verifyAdmin } from "@/lib/supabase"; // Import standard client and verification helper
 
 // Helper to get a privileged client only when needed for writes
 function getAdminClient() {
@@ -51,12 +51,11 @@ export async function updateSettings(formData: {
   skills?: string[];
   vision_text?: string;
   resume_url?: string;
-}, adminEmail: string) {
-  const allowedEmail = process.env.ADMIN_EMAIL || process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-  
-  if (!adminEmail || adminEmail !== allowedEmail) {
-    console.error("Unauthorized settings update attempt:", adminEmail);
-    return { success: false, error: "Unauthorized" };
+}, sessionToken: string) {
+  const authCheck = await verifyAdmin(sessionToken);
+  if (!authCheck.authorized) {
+    console.error("Unauthorized settings update attempt:", authCheck.error);
+    return { success: false, error: authCheck.error || "Unauthorized" };
   }
 
   try {
@@ -104,11 +103,10 @@ export async function getProjects() {
   }
 }
 
-export async function addProject(formData: Omit<Project, "id">, adminEmail: string) {
-  const allowedEmail = process.env.ADMIN_EMAIL || process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-  
-  if (!adminEmail || adminEmail !== allowedEmail) {
-    return { success: false, error: "Unauthorized" };
+export async function addProject(formData: Omit<Project, "id">, sessionToken: string) {
+  const authCheck = await verifyAdmin(sessionToken);
+  if (!authCheck.authorized) {
+    return { success: false, error: authCheck.error || "Unauthorized" };
   }
 
   try {
@@ -128,11 +126,10 @@ export async function addProject(formData: Omit<Project, "id">, adminEmail: stri
   }
 }
 
-export async function deleteProject(projectId: string, adminEmail: string) {
-  const allowedEmail = process.env.ADMIN_EMAIL || process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-  
-  if (!adminEmail || adminEmail !== allowedEmail) {
-    return { success: false, error: "Unauthorized" };
+export async function deleteProject(projectId: string, sessionToken: string) {
+  const authCheck = await verifyAdmin(sessionToken);
+  if (!authCheck.authorized) {
+    return { success: false, error: authCheck.error || "Unauthorized" };
   }
 
   try {
@@ -152,11 +149,10 @@ export async function deleteProject(projectId: string, adminEmail: string) {
   }
 }
 
-export async function updateProject(projectId: string, formData: Partial<Project>, adminEmail: string) {
-  const allowedEmail = process.env.ADMIN_EMAIL || process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-  
-  if (!adminEmail || adminEmail !== allowedEmail) {
-    return { success: false, error: "Unauthorized" };
+export async function updateProject(projectId: string, formData: Partial<Project>, sessionToken: string) {
+  const authCheck = await verifyAdmin(sessionToken);
+  if (!authCheck.authorized) {
+    return { success: false, error: authCheck.error || "Unauthorized" };
   }
 
   try {

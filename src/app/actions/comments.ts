@@ -1,6 +1,6 @@
 "use server";
 
-import { supabase } from "@/lib/supabase";
+import { supabase, verifyAdmin } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
 
 export async function getApprovedComments() {
@@ -68,11 +68,10 @@ export async function submitComment(formData: {
 }
 
 // Admin Action: Approve Comment
-export async function approveComment(commentId: string, adminEmail: string) {
-  const allowedEmail = process.env.ADMIN_EMAIL || process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-  
-  if (adminEmail !== allowedEmail) {
-    return { success: false, error: "Unauthorized" };
+export async function approveComment(commentId: string, sessionToken: string) {
+  const authCheck = await verifyAdmin(sessionToken);
+  if (!authCheck.authorized) {
+    return { success: false, error: authCheck.error || "Unauthorized" };
   }
 
   if (!supabase) return { success: false, error: "Supabase error" };
@@ -89,11 +88,10 @@ export async function approveComment(commentId: string, adminEmail: string) {
 }
 
 // Admin Action: Delete/Reject Comment
-export async function deleteComment(commentId: string, adminEmail: string) {
-  const allowedEmail = process.env.ADMIN_EMAIL || process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-  
-  if (adminEmail !== allowedEmail) {
-    return { success: false, error: "Unauthorized" };
+export async function deleteComment(commentId: string, sessionToken: string) {
+  const authCheck = await verifyAdmin(sessionToken);
+  if (!authCheck.authorized) {
+    return { success: false, error: authCheck.error || "Unauthorized" };
   }
 
   if (!supabase) return { success: false, error: "Supabase error" };

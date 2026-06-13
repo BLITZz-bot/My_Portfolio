@@ -151,7 +151,6 @@ export default function AdminDashboard() {
     
     setSettingsData(prev => ({ ...prev, resume_url: publicUrl }));
     setIsUploading(false);
-    alert("Resume uploaded successfully! Click 'Save Changes' to apply.");
   };
 
   const loadAllData = useCallback(async () => {
@@ -191,7 +190,7 @@ export default function AdminDashboard() {
 
   const handleSettingsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!session?.user?.email) return;
+    if (!session?.access_token) return;
     setIsSubmitting(true);
     
     const finalData = {
@@ -199,7 +198,7 @@ export default function AdminDashboard() {
       skills: skillsInput.split(",").map(s => s.trim()).filter(s => s !== "")
     };
 
-    const result = await updateSettings(finalData, session.user.email);
+    const result = await updateSettings(finalData, session.access_token);
     setIsSubmitting(false);
     if (result.success) {
       setIsEditing(false);
@@ -213,7 +212,7 @@ export default function AdminDashboard() {
 
   const handleProjectSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!session?.user?.email) return;
+    if (!session?.access_token) return;
     setIsSubmitting(true);
 
     const submissionData = {
@@ -224,9 +223,9 @@ export default function AdminDashboard() {
 
     let result;
     if (editingProjectId) {
-      result = await updateProject(editingProjectId, submissionData as Partial<Project>, session.user.email);
+      result = await updateProject(editingProjectId, submissionData as Partial<Project>, session.access_token);
     } else {
-      result = await addProject(submissionData as Omit<Project, "id">, session.user.email);
+      result = await addProject(submissionData as Omit<Project, "id">, session.access_token);
     }
 
     setIsSubmitting(false);
@@ -264,16 +263,16 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteProject = async (id: string) => {
-    if (!session?.user?.email) return;
+    if (!session?.access_token) return;
     if (confirm("Delete this project?")) {
-      const result = await deleteProject(id, session.user.email);
+      const result = await deleteProject(id, session.access_token);
       if (result.success) loadAllData();
     }
   };
 
   const handleApproveComment = async (id: string) => {
-    if (!session?.user?.email) return;
-    const result = await approveComment(id, session.user.email);
+    if (!session?.access_token) return;
+    const result = await approveComment(id, session.access_token);
     if (result.success) {
       loadAllData();
       setShowToast(true);
@@ -282,9 +281,9 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteComment = async (id: string) => {
-    if (!session?.user?.email) return;
+    if (!session?.access_token) return;
     if (confirm("Permanently delete this comment?")) {
-      const result = await deleteComment(id, session.user.email);
+      const result = await deleteComment(id, session.access_token);
       if (result.success) loadAllData();
     }
   };

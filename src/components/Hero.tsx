@@ -29,9 +29,28 @@ export function Hero() {
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
       {/* Background Decorative Elements */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-neutral-100/5 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-neutral-100/5 rounded-full blur-3xl animate-pulse delay-1000" />
+      <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
+        {/* Animated Grid */}
+        <motion.div
+          className="absolute inset-0 opacity-[0.4]"
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, rgba(0,0,0,0.5) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(0,0,0,0.5) 1px, transparent 1px)
+            `,
+            backgroundSize: "60px 60px",
+            maskImage: "linear-gradient(135deg, black 0%, transparent 80%)",
+            WebkitMaskImage: "linear-gradient(135deg, black 0%, transparent 80%)"
+          }}
+          animate={{
+            backgroundPosition: ["0px 0px", "60px 60px"]
+          }}
+          transition={{
+            repeat: Infinity,
+            duration: 5,
+            ease: "linear"
+          }}
+        />
       </div>
 
       <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">

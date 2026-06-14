@@ -26,6 +26,53 @@ const getSkillConfig = (name: string) => {
   return skillIconMap.default;
 };
 
+const containerVariants = {
+  hidden: { opacity: 1 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.12,
+      delayChildren: 0.1
+    }
+  }
+} as const;
+
+const cardVariants = {
+  hidden: { 
+    opacity: 0, 
+    y: 45,
+    scale: 0.98
+  },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    scale: 1,
+    transition: { 
+      type: "spring", 
+      stiffness: 70, 
+      damping: 14
+    }
+  }
+} as const;
+
+const statVariants = {
+  hidden: { 
+    opacity: 0, 
+    y: 30, 
+    scale: 0.96 
+  },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    scale: 1,
+    transition: { 
+      type: "spring", 
+      stiffness: 90, 
+      damping: 15 
+    }
+  }
+} as const;
+
 function AnimatedStat({ value, suffix, label, delay = 0, icon: Icon }: { value: number, suffix: string, label: string, delay?: number, icon: any }) {
   const [count, setCount] = useState(0);
   const ref = useRef(null);
@@ -45,16 +92,30 @@ function AnimatedStat({ value, suffix, label, delay = 0, icon: Icon }: { value: 
     }
   }, [isInView, value]);
 
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    e.currentTarget.style.setProperty("--mouse-x", `${x}px`);
+    e.currentTarget.style.setProperty("--mouse-y", `${y}px`);
+  };
+
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-      whileInView={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.5, delay }}
-      whileHover={{ y: -5, boxShadow: "0 10px 30px -10px rgba(255,255,255,0.1)", borderColor: "rgba(255,255,255,0.2)" }}
-      viewport={{ once: true }}
+      variants={statVariants}
+      whileHover={{ 
+        y: -5, 
+        boxShadow: "0 10px 30px -10px rgba(255,255,255,0.1)", 
+        borderColor: "rgba(255,255,255,0.2)",
+        transition: { duration: 0.2, ease: "easeOut" }
+      }}
+      onMouseMove={handleMouseMove}
       className="p-6 rounded-3xl bg-neutral-900 border border-neutral-800 flex flex-col justify-center items-center text-center transition-all duration-300 flex-1 w-full relative overflow-hidden group/stat"
     >
+      {/* Hover Spotlight Glow */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_var(--mouse-x,50%)_var(--mouse-y,50%),rgba(255,255,255,0.03)_0%,transparent_50%)] group-hover/stat:opacity-100 opacity-0 transition-opacity duration-500 pointer-events-none" />
+
       <div className="relative z-10">
         <motion.div 
           animate={ isDone ? { scale: [1, 1.1, 1] } : {}}
@@ -93,17 +154,34 @@ export function About() {
     loadData();
   }, []);
 
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    e.currentTarget.style.setProperty("--mouse-x", `${x}px`);
+    e.currentTarget.style.setProperty("--mouse-y", `${y}px`);
+  };
+
   return (
     <section id="about" className="py-24 px-6 bg-transparent relative">
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="flex flex-col md:flex-row gap-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: false, amount: 0.22 }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full"
+          >
             {/* Identity Card - NEW DESIGN */}
             <motion.div 
-              whileInView={{ opacity: 1, y: 0 }}
-              initial={{ opacity: 0, y: 20 }}
-              transition={{ duration: 0.5 }}
-              viewport={{ once: true }}
+              variants={cardVariants}
+              whileHover={{ 
+                y: -6, 
+                borderColor: "rgba(255,255,255,0.15)",
+                transition: { duration: 0.2, ease: "easeOut" } 
+              }}
+              onMouseMove={handleMouseMove}
               className="md:col-span-2 p-10 rounded-[40px] bg-neutral-900 border border-neutral-800 flex flex-col justify-between relative overflow-hidden group/id"
             >
               {/* Subtle Tech Grid Background */}
@@ -167,20 +245,35 @@ export function About() {
             </motion.div>
 
             {/* Stats Column */}
-            <div className="flex flex-col gap-6 h-full">
-              <AnimatedStat value={data.projects_built} suffix="+" label="Projects Built" delay={0.1} icon={Rocket} />
-              <AnimatedStat value={data.hackathons_won} suffix="x" label="Hackathon Winner" delay={0.2} icon={Trophy} />
-              <AnimatedStat value={data.awards_won} suffix="x" label="Innovation Awards" delay={0.3} icon={Medal} />
-            </div>
+            <motion.div 
+              variants={{
+                hidden: {},
+                visible: {
+                  transition: {
+                    staggerChildren: 0.08
+                  }
+                }
+              }}
+              className="flex flex-col gap-6 h-full"
+            >
+              <AnimatedStat value={data.projects_built} suffix="+" label="Projects Built" icon={Rocket} />
+              <AnimatedStat value={data.hackathons_won} suffix="x" label="Hackathon Winner" icon={Trophy} />
+              <AnimatedStat value={data.awards_won} suffix="x" label="Innovation Awards" icon={Medal} />
+            </motion.div>
 
             {/* Skills Card */}
             <motion.div 
-              whileInView={{ opacity: 1, y: 0 }}
-              initial={{ opacity: 0, y: 20 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              viewport={{ once: true }}
+              variants={cardVariants}
+              whileHover={{ 
+                y: -6, 
+                borderColor: "rgba(255,255,255,0.15)",
+                transition: { duration: 0.2, ease: "easeOut" } 
+              }}
+              onMouseMove={handleMouseMove}
               className="p-10 rounded-[32px] bg-neutral-900 border border-neutral-800 relative overflow-hidden group"
             >
+              {/* Hover Spotlight Glow */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_var(--mouse-x,50%)_var(--mouse-y,50%),rgba(255,255,255,0.03)_0%,transparent_50%)] group-hover:opacity-100 opacity-0 transition-opacity duration-500 pointer-events-none" />
               <div className="relative z-10">
                 <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-neutral-500 mb-8">TECH STACK</h3>
                 <div className="space-y-5">
@@ -208,14 +301,19 @@ export function About() {
 
             {/* Vision & Vibes Card */}
             <motion.div 
-              whileInView={{ opacity: 1, y: 0 }}
-              initial={{ opacity: 0, y: 20 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              viewport={{ once: true }}
+              variants={cardVariants}
+              whileHover={{ 
+                y: -6, 
+                borderColor: "rgba(255,255,255,0.15)",
+                transition: { duration: 0.2, ease: "easeOut" } 
+              }}
+              onMouseMove={handleMouseMove}
               className="md:col-span-2 p-10 rounded-[32px] bg-neutral-900 border border-neutral-800 flex flex-col justify-between overflow-hidden relative group"
             >
+              {/* Hover Spotlight Glow */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_var(--mouse-x,50%)_var(--mouse-y,50%),rgba(255,255,255,0.03)_0%,transparent_50%)] group-hover:opacity-100 opacity-0 transition-opacity duration-500 pointer-events-none" />
               <div className="relative z-10">
-                <h3 className="text-3xl font-bold text-white mb-4 tracking-tight uppercase">ACHIEVEMENT & <span className="text-neutral-500">HOBBIES</span></h3>
+                <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">ACHIEVEMENT & <span className="text-neutral-500">HOBBIES</span></h2>
                 <p className="text-neutral-400 text-lg leading-relaxed whitespace-pre-line">
                   {data.vision_text}
                 </p>
@@ -224,7 +322,7 @@ export function About() {
                 <Sparkles size={450} className="text-white" />
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>

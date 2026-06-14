@@ -82,10 +82,24 @@ export function Projects() {
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16">
           <div>
-            <h2 className="text-4xl md:text-6xl font-bold tracking-tighter mb-4 text-white">THINGS I&apos;VE <span className="text-neutral-500">BUILT.</span></h2>
-            <p className="text-neutral-500 max-w-md">
+            <motion.h2 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: false, amount: 0.22 }}
+              transition={{ type: "spring", stiffness: 80, damping: 15 }}
+              className="text-4xl md:text-6xl font-bold tracking-tighter mb-4 text-white"
+            >
+              THINGS I&apos;VE <span className="text-neutral-500">BUILT.</span>
+            </motion.h2>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: false, amount: 0.22 }}
+              transition={{ type: "spring", stiffness: 80, damping: 15, delay: 0.1 }}
+              className="text-neutral-500 max-w-md"
+            >
               CREATE TO INSPIRE.<br />A curated collection of projects where I&apos;ve combined technical excellence with creative design.
-            </p>
+            </motion.p>
           </div>
           <Link href="/projects">
             <motion.div 
@@ -116,7 +130,7 @@ export function Projects() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
-                viewport={{ once: true }}
+                viewport={{ once: false, amount: 0.22 }}
                 className="group relative"
               >
                 <div 

@@ -35,6 +35,11 @@ export function Navbar() {
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
+      
+      // Clear hash from URL bar when scrolled to the very top
+      if (window.scrollY === 0 && window.location.hash) {
+        window.history.pushState(null, "", window.location.pathname);
+      }
     };
     window.addEventListener("scroll", handleScroll);
     
@@ -62,6 +67,34 @@ export function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Clean hash from URL when landing or navigating back to homepage sections
+  useEffect(() => {
+    if (pathname === "/" && typeof window !== "undefined") {
+      // 1. Check for session storage scroll target (from menu clicks on other pages)
+      const target = sessionStorage.getItem("scroll-target");
+      if (target) {
+        const element = document.getElementById(target);
+        if (element) {
+          setTimeout(() => {
+            element.scrollIntoView({ behavior: "smooth" });
+            sessionStorage.removeItem("scroll-target");
+          }, 150);
+        }
+      } 
+      // 2. Fallback to direct URL hash (direct entry / bookmarks)
+      else if (window.location.hash) {
+        const hash = window.location.hash;
+        const element = document.querySelector(hash);
+        if (element) {
+          setTimeout(() => {
+            element.scrollIntoView({ behavior: "smooth" });
+            window.history.replaceState(null, "", "/");
+          }, 150);
+        }
+      }
+    }
+  }, [pathname]);
+
   const handleSignOut = async () => {
     await supabase?.auth.signOut();
     setIsDropdownOpen(false);
@@ -76,14 +109,19 @@ export function Navbar() {
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (pathname !== "/") {
-      // If we are on /projects, force a hard navigation to the home page with the hash
+      // If we are on a subpage, handle smooth navigation to target sections cleanly without hash in URL
       e.preventDefault();
       setMobileMenuOpen(false);
-      router.push(href);
+      if (href.startsWith("/#") && typeof window !== "undefined") {
+        const target = href.substring(2); // e.g. "projects"
+        sessionStorage.setItem("scroll-target", target);
+      }
+      router.push("/");
     } else if (href === "/") {
       // If we are already on home and click "Home", scroll to top
       e.preventDefault();
       window.scrollTo({ top: 0, behavior: "smooth" });
+      window.history.pushState(null, "", "/");
       setMobileMenuOpen(false);
     } else if (href.startsWith("/#")) {
       // If we are already on home, let smooth scroll handle it

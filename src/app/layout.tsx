@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Modern Animated Portfolio",
+  title: "bharatha01",
   description: "A high-end portfolio built with Next.js, Framer Motion, and Supabase",
 };
 
@@ -30,6 +30,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
       style={{ colorScheme: 'dark' }}
+      data-scroll-behavior="smooth"
     >
       <body className="min-h-full flex flex-col bg-white text-neutral-950 selection:bg-neutral-900 selection:text-white font-sans">
         <SmoothScroll>

@@ -147,10 +147,24 @@ export function Testimonials() {
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16">
           <div>
-            <h2 className="text-4xl md:text-6xl font-bold text-white tracking-tighter mb-4 italic">WHAT PEOPLE <span className="text-neutral-500">SAY.</span></h2>
-            <p className="text-neutral-500 max-w-md">
+            <motion.h2 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: false, amount: 0.22 }}
+              transition={{ type: "spring", stiffness: 80, damping: 15 }}
+              className="text-4xl md:text-6xl font-bold text-white tracking-tighter mb-4 italic"
+            >
+              WHAT PEOPLE <span className="text-neutral-500">SAY.</span>
+            </motion.h2>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: false, amount: 0.22 }}
+              transition={{ type: "spring", stiffness: 80, damping: 15, delay: 0.1 }}
+              className="text-neutral-500 max-w-md"
+            >
               FEEDBACK & RECOMMENDATIONS.<br />Read what clients, teammates, and mentors say about our collaboration.
-            </p>
+            </motion.p>
           </div>
           <Link href="/comments">
             <motion.div 
@@ -185,7 +199,7 @@ export function Testimonials() {
                     initial={{ opacity: 0, x: -20 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.1 }}
-                    viewport={{ once: false, amount: 0.8 }}
+                    viewport={{ once: false, amount: 0.22 }}
                     className="p-8 rounded-3xl bg-neutral-900/50 backdrop-blur-md border border-neutral-800 relative group"
                   >
                     <p className="text-lg text-neutral-300 mb-6 italic">&quot;{t.content}&quot;</p>
@@ -206,7 +220,7 @@ export function Testimonials() {
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
+              viewport={{ once: false, amount: 0.22 }}
               className="p-10 rounded-[32px] bg-neutral-900/60 backdrop-blur-lg border border-white/5 w-full text-center relative group transform-gpu"
             >
               <div className="absolute inset-0 rounded-[32px] bg-gradient-to-b from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />

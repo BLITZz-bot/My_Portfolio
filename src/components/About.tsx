@@ -73,10 +73,10 @@ const statVariants = {
   }
 } as const;
 
-function AnimatedStat({ value, suffix, label, delay = 0, icon: Icon }: { value: number, suffix: string, label: string, delay?: number, icon: any }) {
+function AnimatedStat({ value, suffix, label, delay = 0, icon: Icon, isMobile }: { value: number, suffix: string, label: string, delay?: number, icon: any, isMobile: boolean }) {
   const [count, setCount] = useState(0);
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-50px" });
+  const isInView = useInView(ref, { once: true, margin: isMobile ? "-10px" : "-50px" });
   const [isDone, setIsDone] = useState(false);
 
   useEffect(() => {
@@ -143,6 +143,16 @@ export function About() {
     skills: [],
     vision_text: "Passionate about photography, exploring new tech stacks, and dreaming of building an AI-driven platform that makes education accessible to everyone worldwide."
   });
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -170,7 +180,7 @@ export function About() {
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: false, amount: 0.22 }}
+            viewport={{ once: false, amount: isMobile ? 0.05 : 0.22 }}
             className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full"
           >
             {/* Identity Card - NEW DESIGN */}
@@ -256,9 +266,9 @@ export function About() {
               }}
               className="flex flex-col gap-6 h-full"
             >
-              <AnimatedStat value={data.projects_built} suffix="+" label="Projects Built" icon={Rocket} />
-              <AnimatedStat value={data.hackathons_won} suffix="x" label="Hackathon Winner" icon={Trophy} />
-              <AnimatedStat value={data.awards_won} suffix="x" label="Innovation Awards" icon={Medal} />
+              <AnimatedStat value={data.projects_built} suffix="+" label="Projects Built" icon={Rocket} isMobile={isMobile} />
+              <AnimatedStat value={data.hackathons_won} suffix="x" label="Hackathon Winner" icon={Trophy} isMobile={isMobile} />
+              <AnimatedStat value={data.awards_won} suffix="x" label="Innovation Awards" icon={Medal} isMobile={isMobile} />
             </motion.div>
 
             {/* Skills Card */}

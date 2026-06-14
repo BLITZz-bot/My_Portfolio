@@ -16,8 +16,30 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   title: "bharatha01",
   description: "A high-end portfolio built with Next.js, Framer Motion, and Supabase",
+  openGraph: {
+    title: "bharatha01",
+    description: "A high-end portfolio built with Next.js, Framer Motion, and Supabase",
+    siteName: "bharatha01 Portfolio",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "bharatha01 Portfolio Preview Banner",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "bharatha01",
+    description: "A high-end portfolio built with Next.js, Framer Motion, and Supabase",
+    images: ["/og-image.jpg"],
+  },
 };
 
 export default function RootLayout({

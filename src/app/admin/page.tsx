@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
-import { getSettings, updateSettings, getProjects, addProject, deleteProject, updateProject, getOngoingProjects, addOngoingProject, deleteOngoingProject, updateOngoingProject } from "@/app/actions/admin";
+import { checkIsAdmin, getSettings, updateSettings, getProjects, addProject, deleteProject, updateProject, getOngoingProjects, addOngoingProject, deleteOngoingProject, updateOngoingProject } from "@/app/actions/admin";
 import { getAllComments, approveComment, deleteComment } from "@/app/actions/comments";
 import { Project } from "@/lib/projects";
 import Link from "next/link";
@@ -101,7 +101,7 @@ export default function AdminDashboard() {
     github: ""
   });
 
-  const isAdmin = !!session?.user?.email && session?.user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "thumbnail" | "gallery" | "ongoing-thumbnail" | "ongoing-gallery") => {
     const files = e.target.files;
@@ -176,13 +176,14 @@ export default function AdminDashboard() {
     setIsUploading(false);
   };
 
-  const loadAllData = useCallback(async () => {
+  const loadAllData = useCallback(async (token?: string) => {
     setIsLoading(true);
+    const actualToken = token || session?.access_token;
     const [settings, projectList, ongoingProjectList, commentList] = await Promise.all([
       getSettings(),
       getProjects(),
       getOngoingProjects(),
-      getAllComments()
+      actualToken ? getAllComments(actualToken) : Promise.resolve([])
     ]);
 
     if (settings) {
@@ -196,19 +197,40 @@ export default function AdminDashboard() {
     if (ongoingProjectList) setOngoingProjects(ongoingProjectList as unknown as Project[]);
     if (commentList) setComments(commentList as Comment[]);
     setIsLoading(false);
-  }, []);
+  }, [session?.access_token]);
 
   useEffect(() => {
     if (!supabase) return;
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
-      if (session) loadAllData();
-      else setIsLoading(false);
+      if (session) {
+        const authorized = await checkIsAdmin(session.access_token);
+        setIsAdmin(authorized);
+        if (authorized) {
+          loadAllData(session.access_token);
+        } else {
+          setIsLoading(false);
+        }
+      } else {
+        setIsAdmin(false);
+        setIsLoading(false);
+      }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
-      if (session) loadAllData();
+      if (session) {
+        const authorized = await checkIsAdmin(session.access_token);
+        setIsAdmin(authorized);
+        if (authorized) {
+          loadAllData(session.access_token);
+        } else {
+          setIsLoading(false);
+        }
+      } else {
+        setIsAdmin(false);
+        setIsLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();

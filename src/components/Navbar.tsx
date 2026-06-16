@@ -8,6 +8,7 @@ import { Menu, X, User, LayoutDashboard, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
+import { checkIsAdmin } from "@/app/actions/admin";
 
 const navItems = [
   { name: "Home", href: "/" },
@@ -32,7 +33,7 @@ export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const isAdmin = !!session?.user?.email && session?.user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const avatarUrl = 
     session?.user?.user_metadata?.avatar_url || 
@@ -63,9 +64,23 @@ export function Navbar() {
     window.addEventListener("scroll", handleScroll);
     
     if (supabase) {
-      supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      supabase.auth.getSession().then(async ({ data: { session } }) => {
         setSession(session);
+        if (session) {
+          const authorized = await checkIsAdmin(session.access_token);
+          setIsAdmin(authorized);
+        } else {
+          setIsAdmin(false);
+        }
+      });
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        setSession(session);
+        if (session) {
+          const authorized = await checkIsAdmin(session.access_token);
+          setIsAdmin(authorized);
+        } else {
+          setIsAdmin(false);
+        }
       });
       return () => {
         window.removeEventListener("scroll", handleScroll);

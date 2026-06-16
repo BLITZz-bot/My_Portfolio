@@ -40,20 +40,30 @@ export async function getApprovedComments() {
   return data;
 }
 
-export async function getAllComments() {
-  if (!supabase) return [];
-
-  const { data, error } = await supabase
-    .from("comments")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("Error fetching all comments:", error);
+export async function getAllComments(sessionToken: string) {
+  const authCheck = await verifyAdmin(sessionToken);
+  if (!authCheck.authorized) {
+    console.error("Unauthorized access to comments:", authCheck.error);
     return [];
   }
 
-  return data;
+  try {
+    const supabaseAdmin = getAdminClient();
+    const { data, error } = await supabaseAdmin
+      .from("comments")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching all comments:", error);
+      return [];
+    }
+
+    return data;
+  } catch (err) {
+    console.error("getAllComments failed:", err);
+    return [];
+  }
 }
 
 export async function submitComment(formData: {

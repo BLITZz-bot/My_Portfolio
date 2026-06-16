@@ -22,6 +22,19 @@ function getAdminClient() {
   return createClient(url, key);
 }
 
+// --- Auth Actions ---
+
+export async function checkIsAdmin(sessionToken: string): Promise<boolean> {
+  if (!sessionToken) return false;
+  try {
+    const authCheck = await verifyAdmin(sessionToken);
+    return authCheck.authorized;
+  } catch (err) {
+    console.error("checkIsAdmin failed:", err);
+    return false;
+  }
+}
+
 // --- Settings Actions ---
 
 export async function getSettings() {

@@ -54,5 +54,25 @@ CREATE POLICY "Allow public read of settings" ON portfolio_settings FOR SELECT U
 -- Allow authenticated users to read their own comments
 CREATE POLICY "Allow users to read their own comments" ON comments FOR SELECT TO authenticated USING (auth.uid() = user_id);
 
--- Allow anyone to insert comments (which will default to approved = false for moderation)
-CREATE POLICY "Allow public insert of comments" ON comments FOR INSERT WITH CHECK (TRUE);
+-- Allow anyone to insert comments (which must default/be set to approved = false for moderation)
+CREATE POLICY "Allow public insert of comments" ON comments FOR INSERT WITH CHECK (approved = FALSE);
+
+-- Create ongoing_projects table
+CREATE TABLE ongoing_projects (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  title TEXT NOT NULL,
+  category TEXT NOT NULL,
+  thumbnail TEXT NOT NULL,
+  gallery TEXT[] DEFAULT '{}',
+  description TEXT NOT NULL,
+  technologies TEXT[] DEFAULT '{}',
+  link TEXT,
+  github TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enable RLS on the new table
+ALTER TABLE ongoing_projects ENABLE ROW LEVEL SECURITY;
+
+-- Allow public read of ongoing projects
+CREATE POLICY "Allow public read of ongoing_projects" ON ongoing_projects FOR SELECT USING (TRUE);

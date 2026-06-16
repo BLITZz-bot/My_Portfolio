@@ -18,7 +18,7 @@ export const supabase = (isUrlValid(supabaseUrl) && supabaseAnonKey)
   : null;
 
 export async function verifyAdmin(sessionToken: string): Promise<{ authorized: boolean; error?: string }> {
-  const allowedEmail = process.env.ADMIN_EMAIL || process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  const allowedEmail = process.env.ADMIN_EMAIL;
   if (!supabase) {
     return { authorized: false, error: "Supabase client not initialized" };
   }

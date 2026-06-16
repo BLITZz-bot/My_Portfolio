@@ -4,9 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ExternalLink, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Github } from "@/components/Icons";
-import { projects as staticProjects, Project } from "@/lib/projects";
+import { Project } from "@/lib/projects";
 import Link from "next/link";
-import { getProjects } from "@/app/actions/admin";
+import { getOngoingProjects } from "@/app/actions/admin";
 import Image from "next/image";
 import { useLenis } from "lenis/react";
 
@@ -20,7 +20,7 @@ const ProjectSkeleton = () => (
   </div>
 );
 
-export function Projects() {
+export function OngoingProjects() {
   const lenis = useLenis();
   const [dbProjects, setDbProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -41,12 +41,12 @@ export function Projects() {
   const fetchProjectsData = async () => {
     setIsLoading(true);
     try {
-      const data = await getProjects();
+      const data = await getOngoingProjects();
       if (data && data.length > 0) {
         setDbProjects(data as unknown as Project[]);
       }
     } catch (e) {
-      console.error("Error fetching projects:", e);
+      console.error("Error fetching ongoing projects:", e);
     } finally {
       setIsLoading(false);
     }
@@ -112,10 +112,8 @@ export function Projects() {
     };
   }, [selectedProject, lenis]);
 
-  const displayProjects = dbProjects.length > 0 ? dbProjects : staticProjects;
-
   return (
-    <section id="projects" className="py-24 px-6 bg-transparent relative">
+    <section id="ongoing-projects" className="py-24 px-6 bg-transparent relative">
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-16">
           <div>
@@ -126,7 +124,7 @@ export function Projects() {
               transition={{ type: "spring", stiffness: 80, damping: 15 }}
               className="text-4xl md:text-6xl font-bold tracking-tighter mb-4 text-white"
             >
-              THINGS I&apos;VE <span className="text-neutral-500">BUILT.</span>
+              CURRENTLY <span className="text-neutral-500">INITIATIVES.</span>
             </motion.h2>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
@@ -135,16 +133,16 @@ export function Projects() {
               transition={{ type: "spring", stiffness: 80, damping: 15, delay: 0.1 }}
               className="text-neutral-500 max-w-md"
             >
-              CREATE TO INSPIRE.<br />A curated collection of projects where I&apos;ve combined technical excellence with creative design.
+              IN PROGRESS.<br />A showcase of projects that I am currently working on, researching, or actively developing.
             </motion.p>
           </div>
-          <Link href="/projects" className="w-full md:w-auto">
+          <Link href="/projects-in-progress" className="w-full md:w-auto">
             <motion.div 
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="w-full md:w-auto px-6 py-3 border border-neutral-800 rounded-full text-sm font-bold text-white hover:bg-white hover:text-black transition-all cursor-pointer text-center"
             >
-              View All Projects
+              View All Initiatives
             </motion.div>
           </Link>
         </div>
@@ -154,14 +152,14 @@ export function Projects() {
             <ProjectSkeleton />
             <ProjectSkeleton />
           </div>
-        ) : displayProjects.length === 0 ? (
+        ) : dbProjects.length === 0 ? (
           <div className="w-full text-center py-20 bg-neutral-900/40 border border-white/5 rounded-[32px] backdrop-blur-sm">
-            <p className="text-neutral-500 font-bold uppercase tracking-widest text-xs">No projects showcase available yet.</p>
+            <p className="text-neutral-500 font-bold uppercase tracking-widest text-xs">No active initiatives showcase available yet.</p>
             <p className="text-neutral-600 text-sm mt-2">Check back soon or contact the admin.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {displayProjects.slice(0, 4).map((project, index) => (
+            {dbProjects.slice(0, 4).map((project, index) => (
               <motion.div
                 key={project.id || project.title}
                 initial={{ opacity: 0, y: 30 }}

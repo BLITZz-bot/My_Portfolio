@@ -1,14 +1,13 @@
 "use client";
 
 import { motion, useInView, animate } from "framer-motion";
-import { useEffect, useState, useRef } from "react";
-import { Code2, Palette, Globe2, Zap, Sparkles, User, Trophy, Medal, Rocket, Terminal, Fingerprint } from "lucide-react";
+import { useEffect, useState, useRef, ComponentType } from "react";
+import { Code2, Palette, Globe2, Zap, Sparkles, Trophy, Medal, Rocket, Terminal, Fingerprint } from "lucide-react";
 import { Github, Linkedin } from "@/components/Icons";
 import { cn } from "@/lib/utils";
 import { getSettings } from "@/app/actions/admin";
-import { Noise } from "@/components/Noise";
 
-const skillIconMap: Record<string, { icon: any, color: string }> = {
+const skillIconMap: Record<string, { icon: ComponentType<{ className?: string; size?: number }>, color: string }> = {
   "react": { icon: Code2, color: "text-blue-400" },
   "next": { icon: Code2, color: "text-blue-400" },
   "typescript": { icon: Zap, color: "text-yellow-400" },
@@ -73,7 +72,7 @@ const statVariants = {
   }
 } as const;
 
-function AnimatedStat({ value, suffix, label, delay = 0, icon: Icon, isMobile }: { value: number, suffix: string, label: string, delay?: number, icon: any, isMobile: boolean }) {
+function AnimatedStat({ value, suffix, label, icon: Icon, isMobile }: { value: number, suffix: string, label: string, icon: ComponentType<{ className?: string; size?: number }>, isMobile: boolean }) {
   const [count, setCount] = useState(0);
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: isMobile ? "-10px" : "-50px" });
@@ -158,7 +157,7 @@ export function About() {
     const loadData = async () => {
       const settings = await getSettings();
       if (settings) {
-        setData(settings as any);
+        setData(settings as unknown as typeof data);
       }
     };
     loadData();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ExternalLink, X, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
 import { Github } from "@/components/Icons";
@@ -9,6 +9,7 @@ import Link from "next/link";
 import { getProjects } from "@/app/actions/admin";
 import Image from "next/image";
 import { Noise } from "@/components/Noise";
+import { useLenis } from "lenis/react";
 
 const ProjectSkeleton = () => (
   <div className="animate-pulse">
@@ -21,11 +22,13 @@ const ProjectSkeleton = () => (
 );
 
 export default function ProjectsPage() {
+  const lenis = useLenis();
   const [dbProjects, setDbProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -51,30 +54,66 @@ export default function ProjectsPage() {
   };
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     const loadData = async () => {
       await fetchProjectsData();
     };
     loadData();
   }, []);
 
-  // Handle ESC key to close modal
-  useEffect(() => {
-    const handleEsc = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSelectedProject(null);
-    };
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
+  const closeModal = useCallback(() => {
+    setSelectedProject(null);
+    setIsLightboxOpen(false);
   }, []);
 
-  const nextImage = () => {
+  const nextImage = useCallback(() => {
     if (!selectedProject) return;
     setCurrentImageIndex((prev) => (prev + 1) % selectedProject.gallery.length);
-  };
+  }, [selectedProject]);
 
-  const prevImage = () => {
+  const prevImage = useCallback(() => {
     if (!selectedProject) return;
     setCurrentImageIndex((prev) => (prev - 1 + selectedProject.gallery.length) % selectedProject.gallery.length);
-  };
+  }, [selectedProject]);
+
+  // Handle keyboard events for modal & lightbox
+  useEffect(() => {
+    const handleKeydown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        if (isLightboxOpen) {
+          setIsLightboxOpen(false);
+        } else {
+          closeModal();
+        }
+      } else if (event.key === "ArrowRight" && isLightboxOpen) {
+        nextImage();
+      } else if (event.key === "ArrowLeft" && isLightboxOpen) {
+        prevImage();
+      }
+    };
+    window.addEventListener("keydown", handleKeydown);
+    return () => window.removeEventListener("keydown", handleKeydown);
+  }, [isLightboxOpen, closeModal, nextImage, prevImage]);
+
+  useEffect(() => {
+    if (selectedProject) {
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+      document.body.classList.add("projects-modal-open");
+      lenis?.stop();
+    } else {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+      document.body.classList.remove("projects-modal-open");
+      lenis?.start();
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+      document.body.classList.remove("projects-modal-open");
+      lenis?.start();
+    };
+  }, [selectedProject, lenis]);
 
   const displayProjects = dbProjects.length > 0 ? dbProjects : staticProjects;
 
@@ -147,15 +186,15 @@ export default function ProjectsPage() {
                     alt={project.title}
                     fill
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                    className="object-cover md:grayscale md:group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
                   />
                   
-                  {/* Overlay */}
+                  {/* Overlay - Hidden on mobile, visible on desktop hover */}
                   <motion.div 
                     initial={{ opacity: 0 }}
                     whileHover={{ opacity: 1 }}
                     transition={{ duration: 0.3 }}
-                    className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center gap-4"
+                    className="hidden md:flex absolute inset-0 bg-black/60 backdrop-blur-[2px] items-center justify-center gap-4"
                   >
                     <motion.button 
                       onClick={() => {
@@ -201,7 +240,7 @@ export default function ProjectsPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setSelectedProject(null)}
+              onClick={closeModal}
               className="absolute inset-0 bg-black/95 backdrop-blur-xl"
             />
             
@@ -215,7 +254,7 @@ export default function ProjectsPage() {
             >
               {/* Close Button */}
               <button 
-                onClick={() => setSelectedProject(null)}
+                onClick={closeModal}
                 className="absolute top-6 right-6 z-20 p-3 bg-black/50 backdrop-blur-md text-white rounded-full hover:bg-black/80 transition-colors"
               >
                 <X size={20} />
@@ -232,7 +271,8 @@ export default function ProjectsPage() {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.4 }}
-                    className="w-full h-full object-contain"
+                    className="w-full h-full object-contain cursor-zoom-in"
+                    onClick={() => setIsLightboxOpen(true)}
                   />
                 </AnimatePresence>
 
@@ -266,7 +306,7 @@ export default function ProjectsPage() {
               </div>
 
               {/* Right Side: Details */}
-              <div className="w-full md:w-[35%] p-8 md:p-12 overflow-y-auto custom-scrollbar bg-neutral-900/50">
+              <div className="w-full md:w-[35%] p-8 md:p-12 overflow-y-auto custom-scrollbar bg-neutral-900/50" data-lenis-prevent>
                 <div className="mb-8">
                   <p className="text-sm text-neutral-500 uppercase tracking-widest font-medium mb-2">{selectedProject.category}</p>
                   <h3 className="text-3xl md:text-4xl font-bold text-white tracking-tighter uppercase">{selectedProject.title}</h3>
@@ -318,6 +358,81 @@ export default function ProjectsPage() {
                 </div>
               </div>
             </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Fullscreen Lightbox Overlay */}
+      <AnimatePresence>
+        {selectedProject && isLightboxOpen && (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/95 backdrop-blur-xl">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsLightboxOpen(false)}
+              className="absolute inset-0 cursor-zoom-out"
+            />
+            
+            {/* Close button */}
+            <button 
+              onClick={() => setIsLightboxOpen(false)}
+              className="absolute top-6 right-6 z-20 p-3 bg-neutral-900/50 backdrop-blur-md text-white rounded-full hover:bg-neutral-800 transition-colors border border-white/10"
+            >
+              <X size={24} />
+            </button>
+
+            {/* Lightbox Image Container */}
+            <div className="relative max-w-7xl max-h-[85vh] w-full px-6 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={currentImageIndex}
+                  src={selectedProject.gallery[currentImageIndex]}
+                  alt={`${selectedProject.title} screenshot ${currentImageIndex + 1}`}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3 }}
+                  className="max-w-full max-h-[80vh] object-contain rounded-xl select-none pointer-events-none"
+                />
+              </AnimatePresence>
+
+              {/* Navigation Arrows */}
+              {selectedProject.gallery.length > 1 && (
+                <>
+                  <button 
+                    onClick={prevImage}
+                    className="absolute left-10 p-4 bg-neutral-900/50 backdrop-blur-md text-white rounded-full hover:bg-neutral-800 transition-colors border border-white/5"
+                  >
+                    <ChevronLeft size={28} />
+                  </button>
+                  <button 
+                    onClick={nextImage}
+                    className="absolute right-10 p-4 bg-neutral-900/50 backdrop-blur-md text-white rounded-full hover:bg-neutral-800 transition-colors border border-white/5"
+                  >
+                    <ChevronRight size={28} />
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Indicators */}
+            <div className="absolute bottom-6 flex flex-col items-center gap-2">
+              <span className="text-xs text-neutral-400 font-bold uppercase tracking-widest">
+                Image {currentImageIndex + 1} / {selectedProject.gallery.length}
+              </span>
+              {selectedProject.gallery.length > 1 && (
+                <div className="flex gap-2">
+                  {selectedProject.gallery.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentImageIndex(i)}
+                      className={`w-2 h-2 rounded-full transition-all ${i === currentImageIndex ? "bg-white w-6" : "bg-white/30"}`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </AnimatePresence>

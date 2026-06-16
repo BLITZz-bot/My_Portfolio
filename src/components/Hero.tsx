@@ -11,8 +11,8 @@ export function Hero() {
   useEffect(() => {
     const fetchSettings = async () => {
       const settings = await getSettings();
-      if (settings && (settings as any).resume_url) {
-        setResumeUrl((settings as any).resume_url);
+      if (settings && (settings as { resume_url?: string }).resume_url) {
+        setResumeUrl((settings as { resume_url?: string }).resume_url || null);
       }
     };
     fetchSettings();

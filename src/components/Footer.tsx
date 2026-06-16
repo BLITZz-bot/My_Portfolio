@@ -47,6 +47,7 @@ export function Footer() {
             <Link href="/" className="text-sm text-neutral-400 hover:text-white transition-colors">Home</Link>
             <Link href="/#about" className="text-sm text-neutral-400 hover:text-white transition-colors">About</Link>
             <Link href="/#projects" className="text-sm text-neutral-400 hover:text-white transition-colors">Projects</Link>
+            <Link href="/#ongoing-projects" className="text-sm text-neutral-400 hover:text-white transition-colors">Initiatives</Link>
             <Link href="/#recommendations" className="text-sm text-neutral-400 hover:text-white transition-colors">Recommendations</Link>
           </div>
         </div>

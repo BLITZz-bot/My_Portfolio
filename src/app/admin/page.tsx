@@ -16,18 +16,17 @@ import {
   Pencil,
   MessageSquare,
   Check,
-  XCircle,
   Download,
   Menu,
   X
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
-import { getSettings, updateSettings, getProjects, addProject, deleteProject, updateProject } from "@/app/actions/admin";
+import { getSettings, updateSettings, getProjects, addProject, deleteProject, updateProject, getOngoingProjects, addOngoingProject, deleteOngoingProject, updateOngoingProject } from "@/app/actions/admin";
 import { getAllComments, approveComment, deleteComment } from "@/app/actions/comments";
 import { Project } from "@/lib/projects";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+
 
 interface SettingsData {
   about_text: string;
@@ -52,16 +51,19 @@ interface Comment {
 
 export default function AdminDashboard() {
   const [session, setSession] = useState<Session | null>(null);
-  const [activeTab, setActiveTab] = useState<"settings" | "projects" | "comments">("settings");
+  const [activeTab, setActiveTab] = useState<"settings" | "projects" | "ongoing" | "comments">("settings");
   const [isEditing, setIsEditing] = useState(false);
   const [isAddingProject, setIsAddingProject] = useState(false);
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const [isAddingOngoingProject, setIsAddingOngoingProject] = useState(false);
+  const [editingOngoingProjectId, setEditingOngoingProjectId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [ongoingProjects, setOngoingProjects] = useState<Project[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
 
   // Form States
@@ -88,9 +90,20 @@ export default function AdminDashboard() {
     github: ""
   });
 
+  const [ongoingProjectData, setOngoingProjectData] = useState({
+    title: "",
+    category: "",
+    description: "",
+    thumbnail: "",
+    gallery: "",
+    technologies: "",
+    link: "",
+    github: ""
+  });
+
   const isAdmin = !!session?.user?.email && session?.user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "thumbnail" | "gallery") => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "thumbnail" | "gallery" | "ongoing-thumbnail" | "ongoing-gallery") => {
     const files = e.target.files;
     if (!files || files.length === 0 || !supabase) return;
 
@@ -121,10 +134,16 @@ export default function AdminDashboard() {
 
     if (field === "thumbnail") {
       setProjectData(prev => ({ ...prev, thumbnail: uploadedUrls[0] }));
-    } else {
+    } else if (field === "gallery") {
       const currentGallery = projectData.gallery ? projectData.gallery.split(",").map(s => s.trim()) : [];
       const newGallery = [...currentGallery, ...uploadedUrls].filter(s => s !== "").join(", ");
       setProjectData(prev => ({ ...prev, gallery: newGallery }));
+    } else if (field === "ongoing-thumbnail") {
+      setOngoingProjectData(prev => ({ ...prev, thumbnail: uploadedUrls[0] }));
+    } else if (field === "ongoing-gallery") {
+      const currentGallery = ongoingProjectData.gallery ? ongoingProjectData.gallery.split(",").map(s => s.trim()) : [];
+      const newGallery = [...currentGallery, ...uploadedUrls].filter(s => s !== "").join(", ");
+      setOngoingProjectData(prev => ({ ...prev, gallery: newGallery }));
     }
 
     setIsUploading(false);
@@ -159,19 +178,22 @@ export default function AdminDashboard() {
 
   const loadAllData = useCallback(async () => {
     setIsLoading(true);
-    const [settings, projectList, commentList] = await Promise.all([
+    const [settings, projectList, ongoingProjectList, commentList] = await Promise.all([
       getSettings(),
       getProjects(),
+      getOngoingProjects(),
       getAllComments()
     ]);
 
     if (settings) {
-      setSettingsData(settings as SettingsData);
-      if ((settings as any).skills) {
-        setSkillsInput((settings as any).skills.join(", "));
+      const settingsTyped = settings as unknown as SettingsData;
+      setSettingsData(settingsTyped);
+      if (settingsTyped.skills) {
+        setSkillsInput(settingsTyped.skills.join(", "));
       }
     }
     if (projectList) setProjects(projectList as unknown as Project[]);
+    if (ongoingProjectList) setOngoingProjects(ongoingProjectList as unknown as Project[]);
     if (commentList) setComments(commentList as Comment[]);
     setIsLoading(false);
   }, []);
@@ -270,6 +292,66 @@ export default function AdminDashboard() {
     if (!session?.access_token) return;
     if (confirm("Delete this project?")) {
       const result = await deleteProject(id, session.access_token);
+      if (result.success) loadAllData();
+    }
+  };
+
+  const handleOngoingProjectSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!session?.access_token) return;
+    setIsSubmitting(true);
+
+    const submissionData = {
+      ...ongoingProjectData,
+      gallery: ongoingProjectData.gallery.split(",").map(s => s.trim()).filter(s => s !== ""),
+      technologies: ongoingProjectData.technologies.split(",").map(s => s.trim()).filter(s => s !== "")
+    };
+
+    let result;
+    if (editingOngoingProjectId) {
+      result = await updateOngoingProject(editingOngoingProjectId, submissionData as Partial<Project>, session.access_token);
+    } else {
+      result = await addOngoingProject(submissionData as Omit<Project, "id">, session.access_token);
+    }
+
+    setIsSubmitting(false);
+
+    if (result.success) {
+      setOngoingProjectData({ title: "", category: "", description: "", thumbnail: "", gallery: "", technologies: "", link: "", github: "" });
+      setEditingOngoingProjectId(null);
+      setIsAddingOngoingProject(false);
+      loadAllData();
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    } else {
+      alert("Error: " + result.error);
+    }
+  };
+
+  const handleEditOngoingProject = (project: Project) => {
+    setOngoingProjectData({
+      title: project.title,
+      category: project.category,
+      description: project.description,
+      thumbnail: project.thumbnail,
+      gallery: project.gallery.join(", "),
+      technologies: project.technologies.join(", "),
+      link: project.link || "",
+      github: project.github || ""
+    });
+    setEditingOngoingProjectId(project.id);
+    setIsAddingOngoingProject(true);
+    // Scroll to form
+    const formElement = document.querySelector('form');
+    if (formElement) {
+      formElement.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleDeleteOngoingProject = async (id: string) => {
+    if (!session?.access_token) return;
+    if (confirm("Delete this ongoing project?")) {
+      const result = await deleteOngoingProject(id, session.access_token);
       if (result.success) loadAllData();
     }
   };
@@ -384,6 +466,16 @@ export default function AdminDashboard() {
             </button>
             <button 
               onClick={() => {
+                setActiveTab("ongoing");
+                setIsMobileSidebarOpen(false);
+              }}
+              className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all font-medium ${activeTab === "ongoing" ? "bg-white text-black" : "text-neutral-500 hover:bg-white/5 hover:text-white"}`}
+            >
+              <Briefcase size={20} />
+              Projects in Progress
+            </button>
+            <button 
+              onClick={() => {
                 setActiveTab("comments");
                 setIsMobileSidebarOpen(false);
               }}
@@ -439,6 +531,13 @@ export default function AdminDashboard() {
             >
               <Briefcase size={20} />
               Projects
+            </button>
+            <button 
+              onClick={() => setActiveTab("ongoing")}
+              className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all font-medium ${activeTab === "ongoing" ? "bg-white text-black" : "text-neutral-500 hover:bg-white/5 hover:text-white"}`}
+            >
+              <Briefcase size={20} />
+              Projects in Progress
             </button>
             <button 
               onClick={() => setActiveTab("comments")}
@@ -810,6 +909,124 @@ export default function AdminDashboard() {
                     ))}
                   </div>
                 </div>
+              ) : activeTab === "ongoing" ? (
+                <div className="space-y-12">
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <h2 className="text-4xl font-bold tracking-tighter mb-2 uppercase italic">Initiatives <span className="text-neutral-500">Vault.</span></h2>
+                      <p className="text-neutral-500">Add, edit, or remove projects in progress from your showcase.</p>
+                    </div>
+                    {!isAddingOngoingProject && (
+                      <button 
+                        onClick={() => setIsAddingOngoingProject(true)}
+                        className="px-8 py-4 bg-white text-black font-bold rounded-2xl hover:bg-neutral-200 transition-all flex items-center gap-2"
+                      >
+                        <Plus size={18} />
+                        Add New Initiative
+                      </button>
+                    )}
+                  </div>
+
+                  {isAddingOngoingProject && (
+                    <form onSubmit={handleOngoingProjectSubmit} className="space-y-6 p-10 bg-neutral-900/50 border border-white/5 rounded-[32px] backdrop-blur-md">
+                      <h3 className="text-xl font-bold mb-4 text-white uppercase tracking-tight">
+                        {editingOngoingProjectId ? "Update Initiative" : "Create New Initiative"}
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">Title</label>
+                          <input required value={ongoingProjectData.title} onChange={(e) => setOngoingProjectData({...ongoingProjectData, title: e.target.value})} className="w-full bg-neutral-950 border border-white/5 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-white/20 transition-all text-white" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">Category</label>
+                          <input required value={ongoingProjectData.category} onChange={(e) => setOngoingProjectData({...ongoingProjectData, category: e.target.value})} className="w-full bg-neutral-950 border border-white/5 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-white/20 transition-all text-white" />
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">Description</label>
+                        <textarea required rows={3} value={ongoingProjectData.description} onChange={(e) => setOngoingProjectData({...ongoingProjectData, description: e.target.value})} className="w-full bg-neutral-950 border border-white/5 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-white/20 transition-all text-white resize-none" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">Thumbnail URL</label>
+                        <div className="flex gap-2">
+                          <input required value={ongoingProjectData.thumbnail} onChange={(e) => setOngoingProjectData({...ongoingProjectData, thumbnail: e.target.value})} className="flex-1 bg-neutral-950 border border-white/5 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-white/20 transition-all text-white" placeholder="https://..." />
+                          <label className="flex items-center justify-center px-6 bg-neutral-800 hover:bg-neutral-700 rounded-2xl cursor-pointer transition-colors border border-white/5">
+                            {isUploading ? <Loader2 className="animate-spin" size={18} /> : <Upload size={18} />}
+                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, "ongoing-thumbnail")} disabled={isUploading} />
+                          </label>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">Gallery Image URLs (Comma-separated)</label>
+                        <div className="flex gap-2">
+                          <input value={ongoingProjectData.gallery} onChange={(e) => setOngoingProjectData({...ongoingProjectData, gallery: e.target.value})} className="flex-1 bg-neutral-950 border border-white/5 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-white/20 transition-all text-white" placeholder="url1, url2" />
+                          <label className="flex items-center justify-center px-6 bg-neutral-800 hover:bg-neutral-700 rounded-2xl cursor-pointer transition-colors border border-white/5">
+                            {isUploading ? <Loader2 className="animate-spin" size={18} /> : <Plus size={18} />}
+                            <input type="file" className="hidden" multiple accept="image/*" onChange={(e) => handleFileUpload(e, "ongoing-gallery")} disabled={isUploading} />
+                          </label>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">Technologies (Comma-separated)</label>
+                        <input value={ongoingProjectData.technologies} onChange={(e) => setOngoingProjectData({...ongoingProjectData, technologies: e.target.value})} className="w-full bg-neutral-950 border border-white/5 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-white/20 transition-all text-white" />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">Demo Link</label>
+                          <input value={ongoingProjectData.link} onChange={(e) => setOngoingProjectData({...ongoingProjectData, link: e.target.value})} className="w-full bg-neutral-950 border border-white/5 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-white/20 transition-all text-white" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">GitHub Link</label>
+                          <input value={ongoingProjectData.github} onChange={(e) => setOngoingProjectData({...ongoingProjectData, github: e.target.value})} className="w-full bg-neutral-950 border border-white/5 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-white/20 transition-all text-white" />
+                        </div>
+                      </div>
+                      <div className="flex gap-4">
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            setIsAddingOngoingProject(false);
+                            setEditingOngoingProjectId(null);
+                            setOngoingProjectData({ title: "", category: "", description: "", thumbnail: "", gallery: "", technologies: "", link: "", github: "" });
+                          }}
+                          className="flex-1 py-4 bg-neutral-800 text-white font-bold rounded-2xl hover:bg-neutral-700 transition-all"
+                        >
+                          Cancel
+                        </button>
+                        <button type="submit" disabled={isSubmitting} className="flex-[2] py-4 bg-white text-black font-bold rounded-2xl hover:bg-neutral-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                          {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : (
+                            <>{editingOngoingProjectId ? <CheckCircle size={18} /> : <Plus size={18} />} {editingOngoingProjectId ? "Update Initiative" : "Save Initiative"}</>
+                          )}
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  <div className="grid grid-cols-1 gap-4">
+                    <h3 className="text-xl font-bold uppercase tracking-tight text-white mb-2">Existing Initiatives <span className="text-neutral-500 tabular-nums">({ongoingProjects.length})</span></h3>
+                    {ongoingProjects.map(p => (
+                      <div key={p.id} className="flex items-center justify-between p-6 bg-neutral-900/50 border border-white/5 rounded-[24px] backdrop-blur-sm group hover:border-white/10 transition-all">
+                        <div className="flex items-center gap-6">
+                          <div className="relative w-20 h-12 rounded-xl overflow-hidden bg-neutral-800 border border-white/5">
+                            <img src={p.thumbnail} alt="" className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-lg text-white group-hover:text-neutral-200 transition-colors">{p.title}</p>
+                            <p className="text-[10px] text-neutral-500 uppercase tracking-[0.2em] font-bold mt-0.5">{p.category}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => handleEditOngoingProject(p)} className="p-3 text-neutral-500 hover:text-white hover:bg-white/5 rounded-xl transition-all" title="Edit Initiative">
+                            <Pencil size={18} />
+                          </button>
+                          <button onClick={() => handleDeleteOngoingProject(p.id)} className="p-3 text-neutral-500 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all" title="Delete Initiative">
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               ) : (
                 <div className="space-y-12">
                   <div>
@@ -861,7 +1078,7 @@ export default function AdminDashboard() {
                             </div>
                           </div>
                           <p className="text-neutral-300 leading-relaxed italic bg-neutral-950/50 p-6 rounded-2xl border border-white/5">
-                            "{c.content}"
+                            &ldquo;{c.content}&rdquo;
                           </p>
                           <div className="mt-4 flex justify-between items-center px-2">
                             <p className="text-[10px] text-neutral-600 font-bold uppercase tracking-widest">
@@ -881,6 +1098,26 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {showToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-neutral-900 border border-white/10 px-5 py-4 rounded-2xl shadow-xl shadow-black/40"
+          >
+            <div className="w-8 h-8 rounded-xl bg-green-500/10 flex items-center justify-center border border-green-500/20">
+              <Check className="text-green-500" size={16} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white">Action successful</p>
+              <p className="text-xs text-neutral-400">Your changes have been saved.</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

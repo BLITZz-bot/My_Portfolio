@@ -1,6 +1,7 @@
 import { Hero } from "@/components/Hero";
 import { About } from "@/components/About";
 import { Projects } from "@/components/Projects";
+import { OngoingProjects } from "@/components/OngoingProjects";
 import { Testimonials } from "@/components/Testimonials";
 import { Noise } from "@/components/Noise";
 
@@ -16,6 +17,7 @@ export default function Home() {
         <div className="relative z-10">
           <About />
           <Projects />
+          <OngoingProjects />
           <Testimonials />
         </div>
       </div>

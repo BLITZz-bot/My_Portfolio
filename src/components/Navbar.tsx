@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, User, LayoutDashboard, LogOut, Settings } from "lucide-react";
+import { Menu, X, User, LayoutDashboard, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
@@ -13,6 +13,7 @@ const navItems = [
   { name: "Home", href: "/" },
   { name: "About", href: "/#about" },
   { name: "Projects", href: "/#projects" },
+  { name: "Initiatives", href: "/#ongoing-projects" },
   { name: "Recommendations", href: "/#recommendations" },
 ];
 
@@ -21,6 +22,12 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [hideNavbar, setHideNavbar] = useState(() => {
+    if (typeof document !== "undefined") {
+      return document.body.classList.contains("projects-modal-open");
+    }
+    return false;
+  });
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const router = useRouter();
@@ -31,6 +38,18 @@ export function Navbar() {
     session?.user?.user_metadata?.avatar_url || 
     session?.user?.user_metadata?.picture || 
     session?.user?.identities?.[0]?.identity_data?.avatar_url;
+
+  // Observe if the projects modal is open to hide/show the navbar
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    const observer = new MutationObserver(() => {
+      setHideNavbar(document.body.classList.contains("projects-modal-open"));
+    });
+
+    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -57,6 +76,7 @@ export function Navbar() {
   }, []);
 
   // Close dropdown when clicking outside
+  // Close mobile menu on pathname change
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -67,24 +87,17 @@ export function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Clean hash from URL when landing or navigating back to homepage sections
   useEffect(() => {
+    if (mobileMenuOpen) {
+      setTimeout(() => setMobileMenuOpen(false), 0);
+    }
+    
+    // Smooth scroll navigation target restoration after page navigation
     if (pathname === "/" && typeof window !== "undefined") {
-      // 1. Check for session storage scroll target (from menu clicks on other pages)
       const target = sessionStorage.getItem("scroll-target");
       if (target) {
+        sessionStorage.removeItem("scroll-target");
         const element = document.getElementById(target);
-        if (element) {
-          setTimeout(() => {
-            element.scrollIntoView({ behavior: "smooth" });
-            sessionStorage.removeItem("scroll-target");
-          }, 150);
-        }
-      } 
-      // 2. Fallback to direct URL hash (direct entry / bookmarks)
-      else if (window.location.hash) {
-        const hash = window.location.hash;
-        const element = document.querySelector(hash);
         if (element) {
           setTimeout(() => {
             element.scrollIntoView({ behavior: "smooth" });
@@ -93,7 +106,7 @@ export function Navbar() {
         }
       }
     }
-  }, [pathname]);
+  }, [pathname, mobileMenuOpen]);
 
   const handleSignOut = async () => {
     await supabase?.auth.signOut();
@@ -142,6 +155,7 @@ export function Navbar() {
     <nav
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-500 border-b",
+        hideNavbar ? "-translate-y-full pointer-events-none" : "translate-y-0",
         isScrolled
           ? "bg-neutral-950/80 backdrop-blur-md border-white/5 py-3 shadow-2xl"
           : "bg-transparent border-transparent py-5"

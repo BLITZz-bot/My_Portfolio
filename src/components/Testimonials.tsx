@@ -7,7 +7,7 @@ import { submitComment, getApprovedComments } from "@/app/actions/comments";
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
 import Link from "next/link";
-import { Noise } from "@/components/Noise";
+import { useLenis } from "lenis/react";
 
 interface Comment {
   id: string;
@@ -32,6 +32,7 @@ const CommentSkeleton = () => (
 );
 
 export function Testimonials() {
+  const lenis = useLenis();
   const [formData, setFormData] = useState({ name: "", email: "", role: "Client", designation: "", content: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -91,6 +92,23 @@ export function Testimonials() {
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
 
+  useEffect(() => {
+    if (isModalOpen || isLoginModalOpen) {
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+      lenis?.stop();
+    } else {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+      lenis?.start();
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+      lenis?.start();
+    };
+  }, [isModalOpen, isLoginModalOpen, lenis]);
+
   // Toast auto-dismiss
   useEffect(() => {
     if (showToast) {
@@ -145,7 +163,7 @@ export function Testimonials() {
   return (
     <section id="recommendations" className="py-24 px-6 bg-transparent relative">
       <div className="max-w-7xl mx-auto relative z-10">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-16">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-16">
           <div>
             <motion.h2 
               initial={{ opacity: 0, y: 30 }}
@@ -166,11 +184,11 @@ export function Testimonials() {
               FEEDBACK & RECOMMENDATIONS.<br />Read what clients, teammates, and mentors say about our collaboration.
             </motion.p>
           </div>
-          <Link href="/comments">
+          <Link href="/comments" className="w-full md:w-auto">
             <motion.div 
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="hidden md:block px-6 py-3 border border-neutral-800 rounded-full text-sm font-bold text-white hover:bg-white hover:text-black transition-all cursor-pointer"
+              className="w-full md:w-auto px-6 py-3 border border-neutral-800 rounded-full text-sm font-bold text-white hover:bg-white hover:text-black transition-all cursor-pointer text-center"
             >
               View All Recommendations
             </motion.div>
@@ -310,7 +328,8 @@ export function Testimonials() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 50 }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="relative w-full max-w-xl bg-neutral-900 border border-white/10 rounded-[32px] overflow-hidden shadow-2xl transform-gpu"
+              className="relative w-full max-w-xl bg-neutral-900 border border-white/10 rounded-[32px] overflow-hidden shadow-2xl transform-gpu max-h-[90vh] overflow-y-auto custom-scrollbar"
+              data-lenis-prevent
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-8 md:p-10">

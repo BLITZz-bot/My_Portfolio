@@ -34,8 +34,8 @@ export async function verifyAdmin(sessionToken: string): Promise<{ authorized: b
       return { authorized: false, error: "Unauthorized email address" };
     }
     return { authorized: true };
-  } catch (err: any) {
-    return { authorized: false, error: err.message };
+  } catch (err) {
+    return { authorized: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
 

@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ExternalLink, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { ExternalLink, X, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
 import { Github } from "@/components/Icons";
-import { projects as staticProjects, Project } from "@/lib/projects";
+import { Project } from "@/lib/projects";
 import Link from "next/link";
-import { getProjects } from "@/app/actions/admin";
+import { getOngoingProjects } from "@/app/actions/admin";
 import Image from "next/image";
+import { Noise } from "@/components/Noise";
 import { useLenis } from "lenis/react";
 
 const ProjectSkeleton = () => (
@@ -20,7 +21,7 @@ const ProjectSkeleton = () => (
   </div>
 );
 
-export function Projects() {
+export default function OngoingProjectsPage() {
   const lenis = useLenis();
   const [dbProjects, setDbProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -41,18 +42,19 @@ export function Projects() {
   const fetchProjectsData = async () => {
     setIsLoading(true);
     try {
-      const data = await getProjects();
+      const data = await getOngoingProjects();
       if (data && data.length > 0) {
         setDbProjects(data as unknown as Project[]);
       }
     } catch (e) {
-      console.error("Error fetching projects:", e);
+      console.error("Error fetching ongoing projects:", e);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     const loadData = async () => {
       await fetchProjectsData();
     };
@@ -74,6 +76,7 @@ export function Projects() {
     setCurrentImageIndex((prev) => (prev - 1 + selectedProject.gallery.length) % selectedProject.gallery.length);
   }, [selectedProject]);
 
+  // Handle keyboard events for modal & lightbox
   useEffect(() => {
     const handleKeydown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -112,62 +115,59 @@ export function Projects() {
     };
   }, [selectedProject, lenis]);
 
-  const displayProjects = dbProjects.length > 0 ? dbProjects : staticProjects;
-
   return (
-    <section id="projects" className="py-24 px-6 bg-transparent relative">
+    <div className="min-h-screen bg-neutral-950 pt-32 pb-24 px-6 relative overflow-hidden">
+      {/* Grainy Noise Background */}
+      <Noise />
+
+      {/* Radial Vignette for depth */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(0,0,0,0.85)_100%)] pointer-events-none" />
+
       <div className="max-w-7xl mx-auto relative z-10">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-16">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-8">
           <div>
-            <motion.h2 
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false, amount: 0.22 }}
-              transition={{ type: "spring", stiffness: 80, damping: 15 }}
-              className="text-4xl md:text-6xl font-bold tracking-tighter mb-4 text-white"
+            <Link 
+              href="/#ongoing-projects" 
+              className="inline-flex items-center gap-2 text-neutral-500 hover:text-white transition-colors mb-6 group"
             >
-              THINGS I&apos;VE <span className="text-neutral-500">BUILT.</span>
-            </motion.h2>
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false, amount: 0.22 }}
-              transition={{ type: "spring", stiffness: 80, damping: 15, delay: 0.1 }}
-              className="text-neutral-500 max-w-md"
-            >
-              CREATE TO INSPIRE.<br />A curated collection of projects where I&apos;ve combined technical excellence with creative design.
-            </motion.p>
+              <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+              Back to Home
+            </Link>
+            <h1 className="text-5xl md:text-7xl font-bold tracking-tighter text-white uppercase italic">
+              CURRENTLY <span className="text-neutral-500">INITIATIVES.</span>
+            </h1>
+            <p className="text-neutral-500 max-w-md mt-4">
+              A comprehensive showcase of projects that I am currently working on, researching, or actively developing.
+            </p>
           </div>
-          <Link href="/projects" className="w-full md:w-auto">
-            <motion.div 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="w-full md:w-auto px-6 py-3 border border-neutral-800 rounded-full text-sm font-bold text-white hover:bg-white hover:text-black transition-all cursor-pointer text-center"
-            >
-              View All Projects
-            </motion.div>
-          </Link>
+          <div className="text-right hidden md:block">
+            <p className="text-sm font-bold tracking-widest text-neutral-800 uppercase tabular-nums">
+              {dbProjects.length} INITIATIVES TOTAL
+            </p>
+          </div>
         </div>
 
+        {/* Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <ProjectSkeleton />
             <ProjectSkeleton />
             <ProjectSkeleton />
           </div>
-        ) : displayProjects.length === 0 ? (
-          <div className="w-full text-center py-20 bg-neutral-900/40 border border-white/5 rounded-[32px] backdrop-blur-sm">
-            <p className="text-neutral-500 font-bold uppercase tracking-widest text-xs">No projects showcase available yet.</p>
-            <p className="text-neutral-600 text-sm mt-2">Check back soon or contact the admin.</p>
+        ) : dbProjects.length === 0 ? (
+          <div className="w-full text-center py-32 bg-neutral-900/40 border border-white/5 rounded-[40px] backdrop-blur-sm">
+            <p className="text-neutral-500 font-bold uppercase tracking-widest text-sm">Initiatives vault is empty.</p>
+            <p className="text-neutral-600 text-sm mt-2">No active initiatives have been published yet.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {displayProjects.slice(0, 4).map((project, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {dbProjects.map((project, index) => (
               <motion.div
                 key={project.id || project.title}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                viewport={{ once: false, amount: 0.22 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.05 }}
                 className="group relative"
               >
                 <div 
@@ -183,7 +183,7 @@ export function Projects() {
                     src={project.thumbnail} 
                     alt={project.title}
                     fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 50vw"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     className="object-cover md:grayscale md:group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
                   />
                   
@@ -201,8 +201,7 @@ export function Projects() {
                       }}
                       whileHover={{ scale: 1.1, y: -5 }}
                       whileTap={{ scale: 0.9 }}
-                      className="p-5 bg-white text-black rounded-full shadow-xl shadow-white/10 transition-colors hover:bg-neutral-200"
-                      title="View Details"
+                      className="p-5 bg-white text-black rounded-full shadow-xl shadow-white/10"
                     >
                       <ExternalLink size={24} strokeWidth={2.5} />
                     </motion.button>
@@ -213,8 +212,7 @@ export function Projects() {
                         rel="noopener noreferrer"
                         whileHover={{ scale: 1.1, y: -5 }}
                         whileTap={{ scale: 0.9 }}
-                        className="p-5 bg-neutral-800 text-white rounded-full border border-white/10 shadow-xl shadow-black/50 transition-colors hover:border-white/30"
-                        title="View Source Code"
+                        className="p-5 bg-neutral-800 text-white rounded-full border border-white/10 shadow-xl shadow-black/50"
                       >
                         <Github size={24} />
                       </motion.a>
@@ -222,11 +220,9 @@ export function Projects() {
                   </motion.div>
                 </div>
                 
-                <div className="mt-6 flex justify-between items-start">
-                  <div>
-                    <h3 className="text-xl font-bold text-white group-hover:text-neutral-400 transition-colors">{project.title}</h3>
-                    <p className="text-sm text-neutral-500 mt-1 uppercase tracking-widest font-medium">{project.category}</p>
-                  </div>
+                <div className="mt-6">
+                  <h3 className="text-xl font-bold text-white group-hover:text-neutral-400 transition-colors uppercase tracking-tight">{project.title}</h3>
+                  <p className="text-sm text-neutral-500 mt-1 uppercase tracking-widest font-medium">{project.category}</p>
                 </div>
               </motion.div>
             ))}
@@ -234,16 +230,16 @@ export function Projects() {
         )}
       </div>
 
-      {/* Project Details Modal */}
+      {/* Shared Project Details Modal */}
       <AnimatePresence>
         {selectedProject && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-6 py-12">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center px-6 py-12">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={closeModal}
-              className="absolute inset-0 bg-black/90 backdrop-blur-md"
+              className="absolute inset-0 bg-black/95 backdrop-blur-xl"
             />
             
             <motion.div 
@@ -251,7 +247,7 @@ export function Projects() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 50, scale: 0.95 }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="relative w-full max-w-5xl bg-neutral-900 border border-white/10 rounded-[32px] overflow-hidden shadow-2xl transform-gpu flex flex-col md:flex-row max-h-[90vh]"
+              className="relative w-full max-w-6xl bg-neutral-900 border border-white/10 rounded-[32px] overflow-hidden shadow-2xl transform-gpu flex flex-col md:flex-row max-h-[90vh]"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Close Button */}
@@ -263,7 +259,7 @@ export function Projects() {
               </button>
 
               {/* Left Side: Gallery Carousel */}
-              <div className="w-full md:w-3/5 bg-neutral-950 relative aspect-video md:aspect-auto overflow-hidden">
+              <div className="w-full md:w-[65%] bg-neutral-950 relative aspect-video md:aspect-auto overflow-hidden">
                 <AnimatePresence mode="wait">
                   <motion.img
                     key={currentImageIndex}
@@ -308,7 +304,7 @@ export function Projects() {
               </div>
 
               {/* Right Side: Details */}
-              <div className="w-full md:w-2/5 p-8 md:p-12 overflow-y-auto custom-scrollbar" data-lenis-prevent>
+              <div className="w-full md:w-[35%] p-8 md:p-12 overflow-y-auto custom-scrollbar bg-neutral-900/50" data-lenis-prevent>
                 <div className="mb-8">
                   <p className="text-sm text-neutral-500 uppercase tracking-widest font-medium mb-2">{selectedProject.category}</p>
                   <h3 className="text-3xl md:text-4xl font-bold text-white tracking-tighter uppercase">{selectedProject.title}</h3>
@@ -438,6 +434,6 @@ export function Projects() {
           </div>
         )}
       </AnimatePresence>
-    </section>
+    </div>
   );
 }

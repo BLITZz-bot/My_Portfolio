@@ -1,8 +1,27 @@
 "use client";
 
-import { ReactLenis } from "lenis/react";
-import { ReactNode } from "react";
+import { ReactLenis, useLenis } from "lenis/react";
+import { ReactNode, useEffect } from "react";
 import { usePathname } from "next/navigation";
+
+// Helper component to reset scroll to top on page navigation
+function RouteScrollReset() {
+  const pathname = usePathname();
+  const lenis = useLenis();
+
+  useEffect(() => {
+    if (lenis) {
+      if (typeof window !== "undefined") {
+        if (window.location.hash || sessionStorage.getItem("scroll-target")) {
+          return;
+        }
+      }
+      lenis.scrollTo(0, { immediate: true });
+    }
+  }, [pathname, lenis]);
+
+  return null;
+}
 
 export function SmoothScroll({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -13,7 +32,8 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
   }
 
   return (
-    <ReactLenis root options={{ lerp: 0.1, duration: 1.5, smoothWheel: true }}>
+    <ReactLenis root className="flex flex-col min-h-screen w-full" options={{ lerp: 0.1, duration: 1.5, smoothWheel: true }}>
+      <RouteScrollReset />
       {children}
     </ReactLenis>
   );

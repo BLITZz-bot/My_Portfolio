@@ -80,8 +80,8 @@ export async function updateSettings(formData: {
 
     revalidatePath("/");
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
 
@@ -126,8 +126,8 @@ export async function addProject(formData: Omit<Project, "id">, sessionToken: st
     revalidatePath("/");
     revalidatePath("/projects");
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
 
@@ -149,8 +149,8 @@ export async function deleteProject(projectId: string, sessionToken: string) {
     revalidatePath("/");
     revalidatePath("/projects");
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
 
@@ -175,7 +175,102 @@ export async function updateProject(projectId: string, formData: Partial<Project
     revalidatePath("/");
     revalidatePath("/projects");
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+// --- Ongoing Project Actions ---
+
+export async function getOngoingProjects() {
+  if (!supabase) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from("ongoing_projects")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching ongoing projects:", error);
+      return [];
+    }
+
+    return data;
+  } catch (err) {
+    console.error("getOngoingProjects failed:", err);
+    return [];
+  }
+}
+
+export async function addOngoingProject(formData: Omit<Project, "id">, sessionToken: string) {
+  const authCheck = await verifyAdmin(sessionToken);
+  if (!authCheck.authorized) {
+    return { success: false, error: authCheck.error || "Unauthorized" };
+  }
+
+  try {
+    const supabaseAdmin = getAdminClient();
+    const { error } = await supabaseAdmin.from("ongoing_projects").insert([formData]);
+
+    if (error) {
+      console.error("Error adding ongoing project:", error);
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath("/");
+    revalidatePath("/projects-in-progress");
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function deleteOngoingProject(projectId: string, sessionToken: string) {
+  const authCheck = await verifyAdmin(sessionToken);
+  if (!authCheck.authorized) {
+    return { success: false, error: authCheck.error || "Unauthorized" };
+  }
+
+  try {
+    const supabaseAdmin = getAdminClient();
+    const { error } = await supabaseAdmin.from("ongoing_projects").delete().eq("id", projectId);
+
+    if (error) {
+      console.error("Error deleting ongoing project:", error);
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath("/");
+    revalidatePath("/projects-in-progress");
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function updateOngoingProject(projectId: string, formData: Partial<Project>, sessionToken: string) {
+  const authCheck = await verifyAdmin(sessionToken);
+  if (!authCheck.authorized) {
+    return { success: false, error: authCheck.error || "Unauthorized" };
+  }
+
+  try {
+    const supabaseAdmin = getAdminClient();
+    const { error } = await supabaseAdmin
+      .from("ongoing_projects")
+      .update(formData)
+      .eq("id", projectId);
+
+    if (error) {
+      console.error("Error updating ongoing project:", error);
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath("/");
+    revalidatePath("/projects-in-progress");
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }

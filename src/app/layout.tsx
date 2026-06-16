@@ -50,11 +50,44 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
+      className={`${geistSans.variable} ${geistMono.variable} antialiased dark`}
       style={{ colorScheme: 'dark' }}
       data-scroll-behavior="smooth"
     >
       <body className="min-h-full flex flex-col bg-white text-neutral-950 selection:bg-neutral-900 selection:text-white font-sans">
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                if (typeof window === 'undefined') return;
+                var origQS = document.querySelector;
+                document.querySelector = function(selector) {
+                  try {
+                    return origQS.apply(this, arguments);
+                  } catch (err) {
+                    if (err instanceof DOMException && err.name === 'SyntaxError') {
+                      console.warn('Prevented crash: querySelector failed for selector:', selector);
+                      return null;
+                    }
+                    throw err;
+                  }
+                };
+                var origQSA = document.querySelectorAll;
+                document.querySelectorAll = function(selector) {
+                  try {
+                    return origQSA.apply(this, arguments);
+                  } catch (err) {
+                    if (err instanceof DOMException && err.name === 'SyntaxError') {
+                      console.warn('Prevented crash: querySelectorAll failed for selector:', selector);
+                      return [];
+                    }
+                    throw err;
+                  }
+                };
+              })();
+            `
+          }}
+        />
         <SmoothScroll>
           <Navbar />
           <main className="flex-grow">

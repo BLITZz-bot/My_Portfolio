@@ -34,6 +34,7 @@ export default function CommentsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     const loadComments = async () => {
       setIsLoading(true);
       try {

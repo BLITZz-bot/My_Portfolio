@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, User, LayoutDashboard, LogOut } from "lucide-react";
@@ -214,9 +215,11 @@ export function Navbar() {
               className="flex items-center justify-center w-9 h-9 rounded-full border border-white/10 bg-neutral-900 overflow-hidden hover:border-white/30 transition-all group"
             >
               {avatarUrl ? (
-                <img 
+                <Image 
                   src={avatarUrl} 
                   alt="Profile" 
+                  width={36}
+                  height={36}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -299,7 +302,13 @@ export function Navbar() {
                 <div className="flex items-center gap-3 px-2 mb-2">
                   <div className="w-10 h-10 rounded-full border border-white/10 bg-neutral-900 overflow-hidden">
                     {avatarUrl ? (
-                      <img src={avatarUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      <Image 
+                        src={avatarUrl} 
+                        alt="Profile" 
+                        width={40} 
+                        height={40} 
+                        className="w-full h-full object-cover" 
+                      />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center"><User size={20} className="text-neutral-500" /></div>
                     )}

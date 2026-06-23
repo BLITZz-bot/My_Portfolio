@@ -7,6 +7,7 @@ import { submitComment, getApprovedComments } from "@/app/actions/comments";
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
 import Link from "next/link";
+import Image from "next/image";
 import { useLenis } from "lenis/react";
 
 interface Comment {
@@ -296,7 +297,7 @@ export function Testimonials() {
                 onClick={() => supabase?.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } })}
                 className="w-full py-4 bg-white text-black font-bold rounded-2xl flex items-center justify-center gap-3 hover:bg-neutral-200 transition-colors shadow-lg shadow-white/5"
               >
-                <img src="https://www.google.com/favicon.ico" className="w-4 h-4" alt="" />
+                <Image src="https://www.google.com/favicon.ico" width={16} height={16} className="w-4 h-4" alt="" />
                 Continue with Google
               </button>
               

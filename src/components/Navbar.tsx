@@ -102,11 +102,15 @@ export function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Close mobile menu on pathname change
   useEffect(() => {
-    if (mobileMenuOpen) {
-      setTimeout(() => setMobileMenuOpen(false), 0);
-    }
-    
+    const handle = setTimeout(() => {
+      setMobileMenuOpen(false);
+    }, 0);
+    return () => clearTimeout(handle);
+  }, [pathname]);
+
+  useEffect(() => {
     // Smooth scroll navigation target restoration after page navigation
     if (pathname === "/" && typeof window !== "undefined") {
       const target = sessionStorage.getItem("scroll-target");
@@ -121,7 +125,7 @@ export function Navbar() {
         }
       }
     }
-  }, [pathname, mobileMenuOpen]);
+  }, [pathname]);
 
   const handleSignOut = async () => {
     await supabase?.auth.signOut();

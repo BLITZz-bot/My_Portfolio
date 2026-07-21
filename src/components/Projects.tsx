@@ -317,7 +317,7 @@ export function Projects() {
                 <div className="space-y-8">
                   <div>
                     <h4 className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 mb-3">Overview</h4>
-                    <p className="text-neutral-300 leading-relaxed text-sm">
+                    <p className="text-neutral-300 leading-relaxed text-sm whitespace-pre-line">
                       {selectedProject.description}
                     </p>
                   </div>

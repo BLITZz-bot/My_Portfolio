@@ -162,7 +162,7 @@ export function Testimonials() {
   ];
 
   return (
-    <section id="recommendations" className="py-24 px-6 bg-transparent relative">
+    <section id="recommendations" className="py-24 px-6 bg-transparent relative scroll-mt-16">
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-16">
           <div>
@@ -185,7 +185,16 @@ export function Testimonials() {
               FEEDBACK & RECOMMENDATIONS.<br />Read what clients, teammates, and mentors say about our collaboration.
             </motion.p>
           </div>
-          <Link href="/comments" className="w-full md:w-auto">
+          <Link 
+            href="/comments" 
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                sessionStorage.setItem("scroll_restore_pos", window.scrollY.toString());
+                sessionStorage.setItem("scroll_restore_target", "recommendations");
+              }
+            }}
+            className="w-full md:w-auto"
+          >
             <motion.div 
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

@@ -172,7 +172,7 @@ export function About() {
   };
 
   return (
-    <section id="about" className="py-24 px-6 bg-transparent relative">
+    <section id="about" className="py-24 px-6 bg-transparent relative scroll-mt-16">
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="flex flex-col md:flex-row gap-6">
           <motion.div 

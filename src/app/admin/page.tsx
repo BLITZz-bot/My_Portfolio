@@ -18,11 +18,13 @@ import {
   Check,
   Download,
   Menu,
-  X
+  X,
+  ArrowUp,
+  ArrowDown
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
-import { checkIsAdmin, getSettings, updateSettings, getProjects, addProject, deleteProject, updateProject, getOngoingProjects, addOngoingProject, deleteOngoingProject, updateOngoingProject } from "@/app/actions/admin";
+import { checkIsAdmin, getSettings, updateSettings, getProjects, addProject, deleteProject, updateProject, getOngoingProjects, addOngoingProject, deleteOngoingProject, updateOngoingProject, reorderProjects, reorderOngoingProjects } from "@/app/actions/admin";
 import { getAllComments, approveComment, deleteComment } from "@/app/actions/comments";
 import { Project } from "@/lib/projects";
 import Link from "next/link";
@@ -62,6 +64,7 @@ export default function AdminDashboard() {
   const [isUploading, setIsUploading] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [isReordering, setIsReordering] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [ongoingProjects, setOngoingProjects] = useState<Project[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -375,6 +378,44 @@ export default function AdminDashboard() {
     if (confirm("Delete this ongoing project?")) {
       const result = await deleteOngoingProject(id, session.access_token);
       if (result.success) loadAllData();
+    }
+  };
+
+  const handleMoveProject = async (index: number, direction: "up" | "down") => {
+    if (!session?.access_token || isReordering) return;
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= projects.length) return;
+
+    const reordered = [...projects];
+    const [movedItem] = reordered.splice(index, 1);
+    reordered.splice(targetIndex, 0, movedItem);
+
+    setProjects(reordered);
+    setIsReordering(true);
+    const result = await reorderProjects(reordered.map(p => p.id), session.access_token);
+    setIsReordering(false);
+    if (result.success) {
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2000);
+    }
+  };
+
+  const handleMoveOngoingProject = async (index: number, direction: "up" | "down") => {
+    if (!session?.access_token || isReordering) return;
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= ongoingProjects.length) return;
+
+    const reordered = [...ongoingProjects];
+    const [movedItem] = reordered.splice(index, 1);
+    reordered.splice(targetIndex, 0, movedItem);
+
+    setOngoingProjects(reordered);
+    setIsReordering(true);
+    const result = await reorderOngoingProjects(reordered.map(p => p.id), session.access_token);
+    setIsReordering(false);
+    if (result.success) {
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2000);
     }
   };
 
@@ -917,24 +958,62 @@ export default function AdminDashboard() {
                   )}
 
                   <div className="grid grid-cols-1 gap-4">
-                    <h3 className="text-xl font-bold uppercase tracking-tight text-white mb-2">Existing Projects <span className="text-neutral-500 tabular-nums">({projects.length})</span></h3>
-                    {projects.map(p => (
-                      <div key={p.id} className="flex items-center justify-between p-6 bg-neutral-900/50 border border-white/5 rounded-[24px] backdrop-blur-sm group hover:border-white/10 transition-all">
-                        <div className="flex items-center gap-6">
-                          <div className="relative w-20 h-12 rounded-xl overflow-hidden bg-neutral-800 border border-white/5">
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="text-xl font-bold uppercase tracking-tight text-white">Existing Projects <span className="text-neutral-500 tabular-nums">({projects.length})</span></h3>
+                      <span className="text-xs font-mono text-neutral-500">💡 Use arrows to rearrange showcase order</span>
+                    </div>
+                    {projects.map((p, index) => (
+                      <div key={p.id} className="flex items-center justify-between p-4 sm:p-6 bg-neutral-900/50 border border-white/5 rounded-[24px] backdrop-blur-sm group hover:border-white/10 transition-all">
+                        <div className="flex items-center gap-4 sm:gap-6 min-w-0">
+                          {/* Order Position Badge */}
+                          <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-mono text-xs font-bold text-neutral-400 shrink-0">
+                            #{index + 1}
+                          </div>
+
+                          {/* Thumbnail */}
+                          <div className="relative w-16 sm:w-20 h-10 sm:h-12 rounded-xl overflow-hidden bg-neutral-800 border border-white/5 shrink-0">
                             <img src={p.thumbnail} alt="" className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
                           </div>
-                          <div>
-                            <p className="font-bold text-lg text-white group-hover:text-neutral-200 transition-colors">{p.title}</p>
+
+                          {/* Info */}
+                          <div className="min-w-0">
+                            <p className="font-bold text-base sm:text-lg text-white group-hover:text-neutral-200 transition-colors truncate">{p.title}</p>
                             <p className="text-[10px] text-neutral-500 uppercase tracking-[0.2em] font-bold mt-0.5">{p.category}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => handleEditProject(p)} className="p-3 text-neutral-500 hover:text-white hover:bg-white/5 rounded-xl transition-all" title="Edit Project">
-                            <Pencil size={18} />
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                          {/* Move Up */}
+                          <button 
+                            onClick={() => handleMoveProject(index, "up")} 
+                            disabled={index === 0 || isReordering}
+                            className="p-2.5 sm:p-3 text-neutral-400 hover:text-white hover:bg-white/10 rounded-xl transition-all disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-neutral-400 cursor-pointer disabled:cursor-not-allowed"
+                            title="Move Up (Show First)"
+                          >
+                            <ArrowUp size={16} />
                           </button>
-                          <button onClick={() => handleDeleteProject(p.id)} className="p-3 text-neutral-500 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all" title="Delete Project">
-                            <Trash2 size={18} />
+
+                          {/* Move Down */}
+                          <button 
+                            onClick={() => handleMoveProject(index, "down")} 
+                            disabled={index === projects.length - 1 || isReordering}
+                            className="p-2.5 sm:p-3 text-neutral-400 hover:text-white hover:bg-white/10 rounded-xl transition-all disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-neutral-400 cursor-pointer disabled:cursor-not-allowed"
+                            title="Move Down (Show Later)"
+                          >
+                            <ArrowDown size={16} />
+                          </button>
+
+                          <div className="h-4 w-px bg-white/10 mx-1 hidden sm:block" />
+
+                          {/* Edit */}
+                          <button onClick={() => handleEditProject(p)} className="p-2.5 sm:p-3 text-neutral-500 hover:text-white hover:bg-white/5 rounded-xl transition-all cursor-pointer" title="Edit Project">
+                            <Pencil size={16} />
+                          </button>
+
+                          {/* Delete */}
+                          <button onClick={() => handleDeleteProject(p.id)} className="p-2.5 sm:p-3 text-neutral-500 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all cursor-pointer" title="Delete Project">
+                            <Trash2 size={16} />
                           </button>
                         </div>
                       </div>
@@ -1045,24 +1124,62 @@ export default function AdminDashboard() {
                   )}
 
                   <div className="grid grid-cols-1 gap-4">
-                    <h3 className="text-xl font-bold uppercase tracking-tight text-white mb-2">Existing Initiatives <span className="text-neutral-500 tabular-nums">({ongoingProjects.length})</span></h3>
-                    {ongoingProjects.map(p => (
-                      <div key={p.id} className="flex items-center justify-between p-6 bg-neutral-900/50 border border-white/5 rounded-[24px] backdrop-blur-sm group hover:border-white/10 transition-all">
-                        <div className="flex items-center gap-6">
-                          <div className="relative w-20 h-12 rounded-xl overflow-hidden bg-neutral-800 border border-white/5">
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="text-xl font-bold uppercase tracking-tight text-white">Existing Initiatives <span className="text-neutral-500 tabular-nums">({ongoingProjects.length})</span></h3>
+                      <span className="text-xs font-mono text-neutral-500">💡 Use arrows to rearrange showcase order</span>
+                    </div>
+                    {ongoingProjects.map((p, index) => (
+                      <div key={p.id} className="flex items-center justify-between p-4 sm:p-6 bg-neutral-900/50 border border-white/5 rounded-[24px] backdrop-blur-sm group hover:border-white/10 transition-all">
+                        <div className="flex items-center gap-4 sm:gap-6 min-w-0">
+                          {/* Order Position Badge */}
+                          <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-mono text-xs font-bold text-neutral-400 shrink-0">
+                            #{index + 1}
+                          </div>
+
+                          {/* Thumbnail */}
+                          <div className="relative w-16 sm:w-20 h-10 sm:h-12 rounded-xl overflow-hidden bg-neutral-800 border border-white/5 shrink-0">
                             <img src={p.thumbnail} alt="" className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
                           </div>
-                          <div>
-                            <p className="font-bold text-lg text-white group-hover:text-neutral-200 transition-colors">{p.title}</p>
+
+                          {/* Info */}
+                          <div className="min-w-0">
+                            <p className="font-bold text-base sm:text-lg text-white group-hover:text-neutral-200 transition-colors truncate">{p.title}</p>
                             <p className="text-[10px] text-neutral-500 uppercase tracking-[0.2em] font-bold mt-0.5">{p.category}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => handleEditOngoingProject(p)} className="p-3 text-neutral-500 hover:text-white hover:bg-white/5 rounded-xl transition-all" title="Edit Initiative">
-                            <Pencil size={18} />
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                          {/* Move Up */}
+                          <button 
+                            onClick={() => handleMoveOngoingProject(index, "up")} 
+                            disabled={index === 0 || isReordering}
+                            className="p-2.5 sm:p-3 text-neutral-400 hover:text-white hover:bg-white/10 rounded-xl transition-all disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-neutral-400 cursor-pointer disabled:cursor-not-allowed"
+                            title="Move Up (Show First)"
+                          >
+                            <ArrowUp size={16} />
                           </button>
-                          <button onClick={() => handleDeleteOngoingProject(p.id)} className="p-3 text-neutral-500 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all" title="Delete Initiative">
-                            <Trash2 size={18} />
+
+                          {/* Move Down */}
+                          <button 
+                            onClick={() => handleMoveOngoingProject(index, "down")} 
+                            disabled={index === ongoingProjects.length - 1 || isReordering}
+                            className="p-2.5 sm:p-3 text-neutral-400 hover:text-white hover:bg-white/10 rounded-xl transition-all disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-neutral-400 cursor-pointer disabled:cursor-not-allowed"
+                            title="Move Down (Show Later)"
+                          >
+                            <ArrowDown size={16} />
+                          </button>
+
+                          <div className="h-4 w-px bg-white/10 mx-1 hidden sm:block" />
+
+                          {/* Edit */}
+                          <button onClick={() => handleEditOngoingProject(p)} className="p-2.5 sm:p-3 text-neutral-500 hover:text-white hover:bg-white/5 rounded-xl transition-all cursor-pointer" title="Edit Initiative">
+                            <Pencil size={16} />
+                          </button>
+
+                          {/* Delete */}
+                          <button onClick={() => handleDeleteOngoingProject(p.id)} className="p-2.5 sm:p-3 text-neutral-500 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all cursor-pointer" title="Delete Initiative">
+                            <Trash2 size={16} />
                           </button>
                         </div>
                       </div>

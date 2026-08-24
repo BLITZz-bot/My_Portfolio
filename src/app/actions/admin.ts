@@ -287,3 +287,64 @@ export async function updateOngoingProject(projectId: string, formData: Partial<
     return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
+
+// --- Reorder Actions ---
+
+export async function reorderProjects(orderedIds: string[], sessionToken: string) {
+  const authCheck = await verifyAdmin(sessionToken);
+  if (!authCheck.authorized) {
+    return { success: false, error: authCheck.error || "Unauthorized" };
+  }
+
+  try {
+    const supabaseAdmin = getAdminClient();
+    const now = Date.now();
+
+    // Assign decreasing timestamps so index 0 is newest (displayed first)
+    const updates = orderedIds.map((id, index) => {
+      const timestamp = new Date(now - index * 60000).toISOString();
+      return supabaseAdmin
+        .from("projects")
+        .update({ created_at: timestamp })
+        .eq("id", id);
+    });
+
+    await Promise.all(updates);
+
+    revalidatePath("/");
+    revalidatePath("/projects");
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function reorderOngoingProjects(orderedIds: string[], sessionToken: string) {
+  const authCheck = await verifyAdmin(sessionToken);
+  if (!authCheck.authorized) {
+    return { success: false, error: authCheck.error || "Unauthorized" };
+  }
+
+  try {
+    const supabaseAdmin = getAdminClient();
+    const now = Date.now();
+
+    // Assign decreasing timestamps so index 0 is newest (displayed first)
+    const updates = orderedIds.map((id, index) => {
+      const timestamp = new Date(now - index * 60000).toISOString();
+      return supabaseAdmin
+        .from("ongoing_projects")
+        .update({ created_at: timestamp })
+        .eq("id", id);
+    });
+
+    await Promise.all(updates);
+
+    revalidatePath("/");
+    revalidatePath("/projects-in-progress");
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+

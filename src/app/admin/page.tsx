@@ -849,7 +849,7 @@ export default function AdminDashboard() {
                       <div className="space-y-1.5">
                         <div className="flex justify-between items-center ml-1">
                           <label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500">Description & Highlights</label>
-                          <span className="text-[10px] text-emerald-400 font-mono">💡 Tip: Use emojis (🧠, 🌲, ⚡) or (- bullet) for Highlight Cards</span>
+                          <span className="text-[10px] text-emerald-400 font-mono">💡 Tip: Use (1. Point), emojis (🧠, 🚀), or (- bullet) for Highlight Cards</span>
                         </div>
                         <textarea 
                           required 
@@ -857,7 +857,7 @@ export default function AdminDashboard() {
                           value={projectData.description} 
                           onChange={(e) => setProjectData({...projectData, description: e.target.value})} 
                           className="w-full bg-neutral-950 border border-white/5 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-white/20 transition-all text-white font-mono leading-relaxed" 
-                          placeholder="Overview of the project...&#10;&#10;🧠 AI Skill Intelligence&#10;Analyzes resumes and compares them with job descriptions.&#10;&#10;🌲 Dynamic Skill Tree&#10;Skills unlock only after mastery verification."
+                          placeholder="Overview of the project...&#10;&#10;1. AI Skill Intelligence&#10;Analyzes resumes and compares them with job descriptions.&#10;&#10;2. Dynamic Skill Tree&#10;Skills unlock only after mastery verification."
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -977,7 +977,7 @@ export default function AdminDashboard() {
                       <div className="space-y-1.5">
                         <div className="flex justify-between items-center ml-1">
                           <label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500">Description & Highlights</label>
-                          <span className="text-[10px] text-emerald-400 font-mono">💡 Tip: Use emojis (🧠, 🌲, ⚡) or (- bullet) for Highlight Cards</span>
+                          <span className="text-[10px] text-emerald-400 font-mono">💡 Tip: Use (1. Point), emojis (🚀, 🛡️), or (- bullet) for Highlight Cards</span>
                         </div>
                         <textarea 
                           required 
@@ -985,7 +985,7 @@ export default function AdminDashboard() {
                           value={ongoingProjectData.description} 
                           onChange={(e) => setOngoingProjectData({...ongoingProjectData, description: e.target.value})} 
                           className="w-full bg-neutral-950 border border-white/5 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-white/20 transition-all text-white font-mono leading-relaxed" 
-                          placeholder="Overview of the initiative...&#10;&#10;🚀 Alpha Architecture&#10;Currently developing core features and smart sync engine.&#10;&#10;🛡️ Security Guardrails&#10;Integrating verified authentication and zero-trust policies."
+                          placeholder="Overview of the initiative...&#10;&#10;1. Alpha Architecture&#10;Currently developing core features and smart sync engine.&#10;&#10;2. Security Guardrails&#10;Integrating verified authentication and zero-trust policies."
                         />
                       </div>
                       <div className="space-y-1.5">

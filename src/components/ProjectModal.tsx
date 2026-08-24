@@ -26,6 +26,7 @@ interface ProjectModalProps {
 
 interface ParsedFeature {
   icon?: string;
+  badge?: string;
   title: string;
   description: string;
 }
@@ -100,7 +101,7 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
     };
   }, [project, lenis]);
 
-  // Smart Description & Feature Parser
+  // Smart Description & Feature Parser (supports numbers, emojis, bullets, headlines)
   const { introParagraphs, features } = useMemo(() => {
     if (!project?.description) return { introParagraphs: [], features: [] };
 
@@ -108,30 +109,74 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
     const intro: string[] = [];
     const featList: ParsedFeature[] = [];
 
-    const emojiRegex = /^(\p{Extended_Pictographic}|[-*•])\s*(.*)$/u;
+    // Matchers for headline items
+    const numberRegex = /^(\d{1,2})[\.\)]\s*(.*)$/;
+    const emojiRegex = /^(\p{Extended_Pictographic})\s*(.*)$/u;
+    const bulletRegex = /^([-*•✦▪▫→✔✅►])\s*(.*)$/;
+    const headingRegex = /^(?:#{1,4}\s*|\*\*)([^*]+)\*\*?:?$/;
+
+    const isHeadline = (line: string) => {
+      return (
+        numberRegex.test(line) ||
+        emojiRegex.test(line) ||
+        bulletRegex.test(line) ||
+        headingRegex.test(line)
+      );
+    };
+
+    let hasEncounteredFirstFeature = false;
 
     for (let i = 0; i < rawLines.length; i++) {
       const line = rawLines[i];
-      const match = line.match(emojiRegex);
 
-      if (match) {
-        const symbol = match[1];
-        const title = match[2];
-        let desc = "";
+      const numberMatch = line.match(numberRegex);
+      const emojiMatch = line.match(emojiRegex);
+      const bulletMatch = line.match(bulletRegex);
+      const headingMatch = line.match(headingRegex);
 
-        // Check if the next line is a description for this item
-        if (i + 1 < rawLines.length && !rawLines[i + 1].match(emojiRegex)) {
-          desc = rawLines[i + 1];
-          i++; // Skip the next line since we consumed it
+      if (numberMatch || emojiMatch || bulletMatch || headingMatch) {
+        hasEncounteredFirstFeature = true;
+        let badge: string | undefined = undefined;
+        let icon: string | undefined = undefined;
+        let title = "";
+
+        if (numberMatch) {
+          badge = numberMatch[1].padStart(2, "0");
+          title = numberMatch[2] || `Feature ${badge}`;
+        } else if (emojiMatch) {
+          icon = emojiMatch[1];
+          title = emojiMatch[2] || line;
+        } else if (bulletMatch) {
+          const sym = bulletMatch[1];
+          icon = sym !== "-" && sym !== "*" && sym !== "•" ? sym : undefined;
+          title = bulletMatch[2] || line;
+        } else if (headingMatch) {
+          title = headingMatch[1];
+        }
+
+        // Collect description lines directly below this point until the next headline
+        const descLines: string[] = [];
+        while (i + 1 < rawLines.length && !isHeadline(rawLines[i + 1])) {
+          descLines.push(rawLines[i + 1]);
+          i++;
         }
 
         featList.push({
-          icon: symbol !== "-" && symbol !== "*" && symbol !== "•" ? symbol : undefined,
-          title: title || line,
-          description: desc
+          badge,
+          icon,
+          title,
+          description: descLines.join(" ")
         });
       } else {
-        intro.push(line);
+        if (!hasEncounteredFirstFeature) {
+          intro.push(line);
+        } else {
+          // If already past features, add as a feature card
+          featList.push({
+            title: line,
+            description: ""
+          });
+        }
       }
     }
 
@@ -379,7 +424,11 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
                         className="p-3.5 sm:p-4 rounded-xl bg-neutral-900/70 border border-white/10 hover:border-white/20 transition-colors"
                       >
                         <div className="flex items-start gap-3">
-                          {feat.icon ? (
+                          {feat.badge ? (
+                            <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-xs font-mono font-bold text-emerald-400 shrink-0 mt-0.5">
+                              {feat.badge}
+                            </span>
+                          ) : feat.icon ? (
                             <span className="text-xl shrink-0 mt-0.5">{feat.icon}</span>
                           ) : (
                             <div className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 mt-2" />

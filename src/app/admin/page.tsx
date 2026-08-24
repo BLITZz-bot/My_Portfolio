@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Settings as SettingsIcon, 
@@ -179,8 +179,10 @@ export default function AdminDashboard() {
     setIsUploading(false);
   };
 
-  const loadAllData = useCallback(async (token?: string) => {
-    setIsLoading(true);
+  const dataLoadedRef = useRef(false);
+
+  const loadAllData = useCallback(async (token?: string, isInitial = false) => {
+    if (isInitial) setIsLoading(true);
     const actualToken = token || session?.access_token;
     const [settings, projectList, ongoingProjectList, commentList] = await Promise.all([
       getSettings(),
@@ -204,13 +206,16 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (!supabase) return;
+
+    // Check initial session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       if (session) {
         const authorized = await checkIsAdmin(session.access_token);
         setIsAdmin(authorized);
-        if (authorized) {
-          loadAllData(session.access_token);
+        if (authorized && !dataLoadedRef.current) {
+          dataLoadedRef.current = true;
+          await loadAllData(session.access_token, true);
         } else {
           setIsLoading(false);
         }
@@ -220,19 +225,19 @@ export default function AdminDashboard() {
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       if (session) {
         const authorized = await checkIsAdmin(session.access_token);
         setIsAdmin(authorized);
-        if (authorized) {
-          loadAllData(session.access_token);
-        } else {
-          setIsLoading(false);
+        if (authorized && !dataLoadedRef.current) {
+          dataLoadedRef.current = true;
+          await loadAllData(session.access_token, true);
         }
       } else {
         setIsAdmin(false);
         setIsLoading(false);
+        dataLoadedRef.current = false;
       }
     });
 

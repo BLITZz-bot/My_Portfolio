@@ -72,6 +72,11 @@ export default function OngoingProjectsPage() {
           <div>
             <Link 
               href="/#ongoing-projects" 
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  sessionStorage.setItem("scroll_restore_target", "ongoing-projects");
+                }
+              }}
               className="inline-flex items-center gap-2 text-neutral-500 hover:text-white transition-colors mb-6 group"
             >
               <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />

@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
 import { checkIsAdmin } from "@/app/actions/admin";
+import { useLenis } from "lenis/react";
 
 const navItems = [
   { name: "Home", href: "/" },
@@ -103,29 +104,14 @@ export function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const lenis = useLenis();
+
   // Close mobile menu on pathname change
   useEffect(() => {
     const handle = setTimeout(() => {
       setMobileMenuOpen(false);
     }, 0);
     return () => clearTimeout(handle);
-  }, [pathname]);
-
-  useEffect(() => {
-    // Smooth scroll navigation target restoration after page navigation
-    if (pathname === "/" && typeof window !== "undefined") {
-      const target = sessionStorage.getItem("scroll-target");
-      if (target) {
-        sessionStorage.removeItem("scroll-target");
-        const element = document.getElementById(target);
-        if (element) {
-          setTimeout(() => {
-            element.scrollIntoView({ behavior: "smooth" });
-            window.history.replaceState(null, "", "/");
-          }, 150);
-        }
-      }
-    }
   }, [pathname]);
 
   const handleSignOut = async () => {
@@ -142,26 +128,36 @@ export function Navbar() {
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (pathname !== "/") {
-      // If we are on a subpage, handle smooth navigation to target sections cleanly without hash in URL
+      // If we are on a subpage, handle smooth navigation to target sections cleanly
       e.preventDefault();
       setMobileMenuOpen(false);
       if (href.startsWith("/#") && typeof window !== "undefined") {
         const target = href.substring(2); // e.g. "projects"
-        sessionStorage.setItem("scroll-target", target);
+        sessionStorage.setItem("scroll_restore_target", target);
       }
       router.push("/");
     } else if (href === "/") {
       // If we are already on home and click "Home", scroll to top
       e.preventDefault();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (lenis) {
+        lenis.scrollTo(0, { immediate: false, duration: 1.2 });
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
       window.history.pushState(null, "", "/");
       setMobileMenuOpen(false);
     } else if (href.startsWith("/#")) {
-      // If we are already on home, let smooth scroll handle it
+      // If we are already on home, let Lenis scroll smoothly to target
       e.preventDefault();
-      const element = document.querySelector(href.substring(1));
+      const targetId = href.substring(2);
+      const element = document.getElementById(targetId);
       if (element) {
-        element.scrollIntoView({ behavior: "smooth" });
+        if (lenis) {
+          lenis.scrollTo(element, { offset: -70, immediate: false, duration: 1.2 });
+        } else {
+          element.scrollIntoView({ behavior: "smooth" });
+        }
+        window.history.pushState(null, "", "/");
         setMobileMenuOpen(false);
       }
     }

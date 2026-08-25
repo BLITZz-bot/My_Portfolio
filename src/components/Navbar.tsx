@@ -15,6 +15,7 @@ import { useLenis } from "lenis/react";
 const navItems = [
   { name: "Home", href: "/" },
   { name: "About", href: "/#about" },
+  { name: "Experience", href: "/#experience" },
   { name: "Projects", href: "/#projects" },
   { name: "Initiatives", href: "/#ongoing-projects" },
   { name: "Recommendations", href: "/#recommendations" },

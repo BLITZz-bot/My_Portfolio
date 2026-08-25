@@ -3,6 +3,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { Project } from "@/lib/projects";
+import { Experience } from "@/lib/experience";
 import { supabase, verifyAdmin } from "@/lib/supabase"; // Import standard client and verification helper
 
 // Helper to get a privileged client only when needed for writes
@@ -342,6 +343,88 @@ export async function reorderOngoingProjects(orderedIds: string[], sessionToken:
 
     revalidatePath("/");
     revalidatePath("/projects-in-progress");
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+// --- Experience Actions ---
+
+export async function getExperiences() {
+  if (!supabase) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from("experiences")
+      .select("*")
+      .order("sort_order", { ascending: true })
+      .order("start_date", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching experiences:", error);
+      return [];
+    }
+
+    return data;
+  } catch (err) {
+    console.error("getExperiences failed:", err);
+    return [];
+  }
+}
+
+export async function addExperience(formData: Omit<Experience, "id" | "created_at">, sessionToken: string) {
+  const authCheck = await verifyAdmin(sessionToken);
+  if (!authCheck.authorized) return { success: false, error: authCheck.error || "Unauthorized" };
+
+  try {
+    const { error } = await getAdminClient().from("experiences").insert([formData]);
+    if (error) return { success: false, error: error.message };
+    revalidatePath("/");
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function updateExperience(experienceId: string, formData: Partial<Experience>, sessionToken: string) {
+  const authCheck = await verifyAdmin(sessionToken);
+  if (!authCheck.authorized) return { success: false, error: authCheck.error || "Unauthorized" };
+
+  try {
+    const { error } = await getAdminClient().from("experiences").update(formData).eq("id", experienceId);
+    if (error) return { success: false, error: error.message };
+    revalidatePath("/");
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function deleteExperience(experienceId: string, sessionToken: string) {
+  const authCheck = await verifyAdmin(sessionToken);
+  if (!authCheck.authorized) return { success: false, error: authCheck.error || "Unauthorized" };
+
+  try {
+    const { error } = await getAdminClient().from("experiences").delete().eq("id", experienceId);
+    if (error) return { success: false, error: error.message };
+    revalidatePath("/");
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function reorderExperiences(orderedIds: string[], sessionToken: string) {
+  const authCheck = await verifyAdmin(sessionToken);
+  if (!authCheck.authorized) return { success: false, error: authCheck.error || "Unauthorized" };
+
+  try {
+    const client = getAdminClient();
+    const results = await Promise.all(orderedIds.map((id, index) => client.from("experiences").update({ sort_order: index }).eq("id", id)));
+    const failure = results.find(({ error }) => error);
+    if (failure?.error) return { success: false, error: failure.error.message };
+    revalidatePath("/");
     return { success: true };
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : String(err) };

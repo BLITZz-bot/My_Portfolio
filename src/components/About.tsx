@@ -2,7 +2,7 @@
 
 import { motion, useInView, animate } from "framer-motion";
 import { useEffect, useState, useRef, ComponentType } from "react";
-import { Code2, Palette, Globe2, Zap, Sparkles, Trophy, Medal, Rocket, Terminal, Fingerprint } from "lucide-react";
+import { Code2, Palette, Globe2, Zap, Trophy, Medal, Rocket, Terminal, Fingerprint, Sparkles, ArrowUpRight } from "lucide-react";
 import { Github, Linkedin } from "@/components/Icons";
 import { cn } from "@/lib/utils";
 import { getSettings } from "@/app/actions/admin";
@@ -24,6 +24,41 @@ const getSkillConfig = (name: string) => {
   }
   return skillIconMap.default;
 };
+
+type VisionSection = { title: string; items: string[] };
+
+const visionAccentStyles = [
+  { glow: "from-amber-400/15 via-amber-400/5 to-transparent", badge: "border-amber-300/25 bg-amber-300/10 text-amber-200", icon: "text-amber-300/70" },
+  { glow: "from-violet-400/15 via-fuchsia-400/5 to-transparent", badge: "border-violet-300/25 bg-violet-300/10 text-violet-200", icon: "text-violet-300/70" },
+  { glow: "from-cyan-400/15 via-sky-400/5 to-transparent", badge: "border-cyan-300/25 bg-cyan-300/10 text-cyan-200", icon: "text-cyan-300/70" },
+  { glow: "from-emerald-400/15 via-emerald-400/5 to-transparent", badge: "border-emerald-300/25 bg-emerald-300/10 text-emerald-200", icon: "text-emerald-300/70" },
+];
+
+function parseVisionSections(value: string): VisionSection[] {
+  const sections: VisionSection[] = [];
+  let current: VisionSection = { title: "PROFILE NOTES", items: [] };
+
+  for (const rawLine of value.split("\n")) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    const heading = line.match(/^(.+):$/);
+    const item = line.match(/^(?:\d+[.)]|[-•])\s*(.+)$/);
+
+    if (heading && !item) {
+      if (current.items.length) sections.push(current);
+      current = { title: heading[1], items: [] };
+    } else if (item) {
+      current.items.push(item[1]);
+    } else if (current.items.length) {
+      current.items[current.items.length - 1] += ` ${line}`;
+    } else {
+      current.items.push(line);
+    }
+  }
+
+  if (current.items.length) sections.push(current);
+  return sections;
+}
 
 const containerVariants = {
   hidden: { opacity: 1 },
@@ -143,6 +178,7 @@ export function About() {
     vision_text: "Passionate about photography, exploring new tech stacks, and dreaming of building an AI-driven platform that makes education accessible to everyone worldwide."
   });
   const [isMobile, setIsMobile] = useState(false);
+  const visionSections = parseVisionSections(data.vision_text || "");
 
   useEffect(() => {
     const checkMobile = () => {
@@ -285,18 +321,18 @@ export function About() {
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_var(--mouse-x,50%)_var(--mouse-y,50%),rgba(255,255,255,0.03)_0%,transparent_50%)] group-hover:opacity-100 opacity-0 transition-opacity duration-500 pointer-events-none" />
               <div className="relative z-10">
                 <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-neutral-500 mb-8">TECH STACK</h3>
-                <div className="space-y-5">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {(data.skills || []).length === 0 ? (
                     <p className="text-neutral-500 text-sm italic">No tech stack added yet.</p>
                   ) : (
                     (data.skills || []).map((skillName: string) => {
                       const config = getSkillConfig(skillName);
                       return (
-                        <div key={skillName} className="flex items-center gap-4 group/skill">
-                          <div className={cn("p-3 rounded-xl bg-neutral-800 border border-white/5 transition-transform group-hover/skill:scale-110 duration-300", config.color)}>
+                        <div key={skillName} className="flex items-center gap-3 rounded-2xl border border-white/5 bg-black/15 px-3 py-3 transition-all hover:border-white/15 hover:bg-white/[0.04] group/skill">
+                          <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-neutral-800 border border-white/5 transition-transform group-hover/skill:scale-110 duration-300", config.color)}>
                             <config.icon size={18} />
                           </div>
-                          <span className="font-bold text-white tracking-tight">{skillName}</span>
+                          <span className="truncate text-sm font-bold text-white tracking-tight">{skillName}</span>
                         </div>
                       );
                     })
@@ -308,7 +344,7 @@ export function About() {
               </div>
             </motion.div>
 
-            {/* Vision & Vibes Card */}
+            {/* Dashboard-driven achievement and interest card */}
             <motion.div 
               variants={cardVariants}
               whileHover={{ 
@@ -317,15 +353,55 @@ export function About() {
                 transition: { duration: 0.2, ease: "easeOut" } 
               }}
               onMouseMove={handleMouseMove}
-              className="md:col-span-2 p-10 rounded-[32px] bg-neutral-900 border border-neutral-800 flex flex-col justify-between overflow-hidden relative group"
+              className="md:col-span-2 p-6 sm:p-10 rounded-[32px] bg-neutral-900 border border-neutral-800 overflow-hidden relative group"
             >
               {/* Hover Spotlight Glow */}
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_var(--mouse-x,50%)_var(--mouse-y,50%),rgba(255,255,255,0.03)_0%,transparent_50%)] group-hover:opacity-100 opacity-0 transition-opacity duration-500 pointer-events-none" />
               <div className="relative z-10">
-                <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">ACHIEVEMENT & <span className="text-neutral-500">HOBBIES</span></h2>
-                <p className="text-neutral-400 text-lg leading-relaxed whitespace-pre-line">
-                  {data.vision_text}
-                </p>
+                <div className="mb-8 flex items-end justify-between border-b border-white/10 pb-5">
+                  <div>
+                    <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.3em] text-neutral-500">Beyond the build</p>
+                    <h2 className="text-3xl font-bold tracking-tight text-white">MILESTONES &amp; <span className="text-neutral-500">INTERESTS.</span></h2>
+                  </div>
+                  <Sparkles size={24} className="text-neutral-600" />
+                </div>
+
+                {visionSections.length ? (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {visionSections.map((section, sectionIndex) => {
+                      const accent = visionAccentStyles[sectionIndex % visionAccentStyles.length];
+                      return (
+                        <motion.div
+                          key={`${section.title}-${sectionIndex}`}
+                          initial={{ opacity: 0, y: 12 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          viewport={{ once: true, amount: 0.35 }}
+                          transition={{ delay: sectionIndex * 0.08, duration: 0.35 }}
+                          className="group/vision relative overflow-hidden rounded-2xl border border-white/8 bg-black/15 p-5 transition-all duration-500 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.035]"
+                        >
+                          <div className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r ${accent.glow} opacity-70`} />
+                          <div className={`absolute -right-16 -top-16 h-36 w-36 rounded-full bg-gradient-to-br ${accent.glow} blur-2xl opacity-0 transition-opacity duration-500 group-hover/vision:opacity-100`} />
+                          <div className="relative">
+                            <div className="mb-4 flex items-center gap-3">
+                              <span className={`flex h-7 w-7 items-center justify-center rounded-full border text-[10px] font-bold ${accent.badge}`}>0{sectionIndex + 1}</span>
+                              <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-200">{section.title}</h3>
+                            </div>
+                            <ul className="space-y-3">
+                              {section.items.map((item, itemIndex) => (
+                                <li key={`${item}-${itemIndex}`} className="flex gap-3 text-sm leading-6 text-neutral-400 transition-colors group-hover/vision:text-neutral-300">
+                                  <ArrowUpRight size={15} className={`mt-1 shrink-0 ${accent.icon}`} />
+                                  <span>{item}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm italic text-neutral-500">No milestones or interests added yet.</p>
+                )}
               </div>
               <div className="absolute -right-20 -bottom-20 opacity-[0.05] group-hover:opacity-[0.1] group-hover:scale-110 transition-all duration-1000 pointer-events-none">
                 <Sparkles size={450} className="text-white" />

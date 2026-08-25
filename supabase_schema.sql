@@ -76,3 +76,24 @@ ALTER TABLE ongoing_projects ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read of ongoing projects
 CREATE POLICY "Allow public read of ongoing_projects" ON ongoing_projects FOR SELECT USING (TRUE);
+
+-- Create professional experience table
+CREATE TABLE experiences (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  company TEXT NOT NULL,
+  role TEXT NOT NULL,
+  employment_type TEXT NOT NULL DEFAULT 'Full-time',
+  location TEXT NOT NULL DEFAULT '',
+  start_date DATE NOT NULL,
+  end_date DATE,
+  is_current BOOLEAN NOT NULL DEFAULT FALSE,
+  description TEXT NOT NULL DEFAULT '',
+  skills TEXT[] NOT NULL DEFAULT '{}',
+  company_logo TEXT,
+  company_url TEXT,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE experiences ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read of experiences" ON experiences FOR SELECT USING (TRUE);

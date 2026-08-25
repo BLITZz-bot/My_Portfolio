@@ -24,9 +24,10 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
-import { checkIsAdmin, getSettings, updateSettings, getProjects, addProject, deleteProject, updateProject, getOngoingProjects, addOngoingProject, deleteOngoingProject, updateOngoingProject, reorderProjects, reorderOngoingProjects } from "@/app/actions/admin";
+import { checkIsAdmin, getSettings, updateSettings, getProjects, addProject, deleteProject, updateProject, getOngoingProjects, addOngoingProject, deleteOngoingProject, updateOngoingProject, reorderProjects, reorderOngoingProjects, getExperiences, addExperience, updateExperience, deleteExperience, reorderExperiences } from "@/app/actions/admin";
 import { getAllComments, approveComment, deleteComment } from "@/app/actions/comments";
 import { Project } from "@/lib/projects";
+import { Experience } from "@/lib/experience";
 import Link from "next/link";
 
 
@@ -53,12 +54,14 @@ interface Comment {
 
 export default function AdminDashboard() {
   const [session, setSession] = useState<Session | null>(null);
-  const [activeTab, setActiveTab] = useState<"settings" | "projects" | "ongoing" | "comments">("settings");
+  const [activeTab, setActiveTab] = useState<"settings" | "projects" | "ongoing" | "experience" | "comments">("settings");
   const [isEditing, setIsEditing] = useState(false);
   const [isAddingProject, setIsAddingProject] = useState(false);
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [isAddingOngoingProject, setIsAddingOngoingProject] = useState(false);
   const [editingOngoingProjectId, setEditingOngoingProjectId] = useState<string | null>(null);
+  const [isAddingExperience, setIsAddingExperience] = useState(false);
+  const [editingExperienceId, setEditingExperienceId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -67,6 +70,7 @@ export default function AdminDashboard() {
   const [isReordering, setIsReordering] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [ongoingProjects, setOngoingProjects] = useState<Project[]>([]);
+  const [experiences, setExperiences] = useState<Experience[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
 
   // Form States
@@ -103,6 +107,9 @@ export default function AdminDashboard() {
     link: "",
     github: ""
   });
+
+  const emptyExperience = { company: "", role: "", employment_type: "Full-time", location: "", start_date: "", end_date: "", is_current: false, description: "", skills: "", company_logo: "", company_url: "" };
+  const [experienceData, setExperienceData] = useState(emptyExperience);
 
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -184,10 +191,11 @@ export default function AdminDashboard() {
   const loadAllData = useCallback(async (token?: string, isInitial = false) => {
     if (isInitial) setIsLoading(true);
     const actualToken = token || session?.access_token;
-    const [settings, projectList, ongoingProjectList, commentList] = await Promise.all([
+    const [settings, projectList, ongoingProjectList, experienceList, commentList] = await Promise.all([
       getSettings(),
       getProjects(),
       getOngoingProjects(),
+      getExperiences(),
       actualToken ? getAllComments(actualToken) : Promise.resolve([])
     ]);
 
@@ -200,6 +208,7 @@ export default function AdminDashboard() {
     }
     if (projectList) setProjects(projectList as unknown as Project[]);
     if (ongoingProjectList) setOngoingProjects(ongoingProjectList as unknown as Project[]);
+    if (experienceList) setExperiences(experienceList as unknown as Experience[]);
     if (commentList) setComments(commentList as Comment[]);
     setIsLoading(false);
   }, [session?.access_token]);
@@ -386,6 +395,75 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleExperienceSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!session?.access_token) return;
+    setIsSubmitting(true);
+    const submissionData = {
+      ...experienceData,
+      end_date: experienceData.is_current || !experienceData.end_date ? null : experienceData.end_date,
+      skills: experienceData.skills.split(",").map((skill) => skill.trim()).filter(Boolean),
+      company_logo: experienceData.company_logo || null,
+      company_url: experienceData.company_url || null,
+    };
+    const result = editingExperienceId
+      ? await updateExperience(editingExperienceId, submissionData, session.access_token)
+      : await addExperience(submissionData, session.access_token);
+    setIsSubmitting(false);
+    if (result.success) {
+      setExperienceData(emptyExperience);
+      setEditingExperienceId(null);
+      setIsAddingExperience(false);
+      loadAllData();
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    } else {
+      alert("Error: " + result.error);
+    }
+  };
+
+  const handleEditExperience = (experience: Experience) => {
+    setExperienceData({
+      company: experience.company,
+      role: experience.role,
+      employment_type: experience.employment_type,
+      location: experience.location,
+      start_date: experience.start_date,
+      end_date: experience.end_date || "",
+      is_current: experience.is_current,
+      description: experience.description,
+      skills: experience.skills.join(", "),
+      company_logo: experience.company_logo || "",
+      company_url: experience.company_url || "",
+    });
+    setEditingExperienceId(experience.id);
+    setIsAddingExperience(true);
+  };
+
+  const handleDeleteExperience = async (id: string) => {
+    if (!session?.access_token || !confirm("Delete this experience entry?")) return;
+    const result = await deleteExperience(id, session.access_token);
+    if (result.success) loadAllData();
+    else alert("Error: " + result.error);
+  };
+
+  const handleMoveExperience = async (index: number, direction: "up" | "down") => {
+    if (!session?.access_token || isReordering) return;
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= experiences.length) return;
+    const reordered = [...experiences];
+    const [moved] = reordered.splice(index, 1);
+    reordered.splice(targetIndex, 0, moved);
+    setExperiences(reordered);
+    setIsReordering(true);
+    const result = await reorderExperiences(reordered.map((experience) => experience.id), session.access_token);
+    setIsReordering(false);
+    if (!result.success) {
+      alert("Error: " + result.error);
+      loadAllData();
+    }
+  };
+
   const handleMoveProject = async (index: number, direction: "up" | "down") => {
     if (!session?.access_token || isReordering) return;
     const targetIndex = direction === "up" ? index - 1 : index + 1;
@@ -532,7 +610,7 @@ export default function AdminDashboard() {
               <Briefcase size={20} />
               Projects
             </button>
-            <button 
+            <button
               onClick={() => {
                 setActiveTab("ongoing");
                 setIsMobileSidebarOpen(false);
@@ -541,6 +619,16 @@ export default function AdminDashboard() {
             >
               <Briefcase size={20} />
               Projects in Progress
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab("experience");
+                setIsMobileSidebarOpen(false);
+              }}
+              className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all font-medium ${activeTab === "experience" ? "bg-white text-black" : "text-neutral-500 hover:bg-white/5 hover:text-white"}`}
+            >
+              <Briefcase size={20} />
+              Experience
             </button>
             <button 
               onClick={() => {
@@ -600,7 +688,7 @@ export default function AdminDashboard() {
               <Briefcase size={20} />
               Projects
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab("ongoing")}
               className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all font-medium ${activeTab === "ongoing" ? "bg-white text-black" : "text-neutral-500 hover:bg-white/5 hover:text-white"}`}
             >
@@ -608,6 +696,13 @@ export default function AdminDashboard() {
               Projects in Progress
             </button>
             <button 
+              onClick={() => setActiveTab("experience")}
+              className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all font-medium ${activeTab === "experience" ? "bg-white text-black" : "text-neutral-500 hover:bg-white/5 hover:text-white"}`}
+            >
+              <Briefcase size={20} />
+              Experience
+            </button>
+            <button
               onClick={() => setActiveTab("comments")}
               className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all font-medium ${activeTab === "comments" ? "bg-white text-black" : "text-neutral-500 hover:bg-white/5 hover:text-white"}`}
             >
@@ -1189,6 +1284,43 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                </div>
+              ) : activeTab === "experience" ? (
+                <div className="space-y-12">
+                  <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+                    <div>
+                      <h2 className="text-4xl font-bold tracking-tighter mb-2 uppercase italic">Career <span className="text-neutral-500">Timeline.</span></h2>
+                      <p className="text-neutral-500">Manage the roles displayed on your public experience page.</p>
+                    </div>
+                    {!isAddingExperience && <button onClick={() => setIsAddingExperience(true)} className="px-8 py-4 bg-white text-black font-bold rounded-2xl hover:bg-neutral-200 transition-all flex items-center gap-2"><Plus size={18} />Add Experience</button>}
+                  </div>
+
+                  {isAddingExperience && (
+                    <form onSubmit={handleExperienceSubmit} className="space-y-6 p-6 sm:p-10 bg-neutral-900/50 border border-white/5 rounded-[32px] backdrop-blur-md">
+                      <h3 className="text-xl font-bold text-white uppercase tracking-tight">{editingExperienceId ? "Update Experience" : "Add Experience"}</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-1.5"><label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">Company</label><input required value={experienceData.company} onChange={(e) => setExperienceData({ ...experienceData, company: e.target.value })} className="w-full bg-neutral-950 border border-white/5 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-white/20" placeholder="Acme Inc." /></div>
+                        <div className="space-y-1.5"><label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">Role</label><input required value={experienceData.role} onChange={(e) => setExperienceData({ ...experienceData, role: e.target.value })} className="w-full bg-neutral-950 border border-white/5 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-white/20" placeholder="Product Engineer" /></div>
+                        <div className="space-y-1.5"><label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">Employment type</label><input required value={experienceData.employment_type} onChange={(e) => setExperienceData({ ...experienceData, employment_type: e.target.value })} className="w-full bg-neutral-950 border border-white/5 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-white/20" placeholder="Full-time" /></div>
+                        <div className="space-y-1.5"><label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">Location</label><input value={experienceData.location} onChange={(e) => setExperienceData({ ...experienceData, location: e.target.value })} className="w-full bg-neutral-950 border border-white/5 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-white/20" placeholder="Bengaluru, India · Hybrid" /></div>
+                        <div className="space-y-1.5"><label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">Start date</label><input required type="date" value={experienceData.start_date} onChange={(e) => setExperienceData({ ...experienceData, start_date: e.target.value })} className="w-full bg-neutral-950 border border-white/5 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-white/20" /></div>
+                        <div className="space-y-1.5"><label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">End date</label><input type="date" disabled={experienceData.is_current} value={experienceData.end_date} onChange={(e) => setExperienceData({ ...experienceData, end_date: e.target.value })} className="w-full bg-neutral-950 border border-white/5 rounded-2xl px-5 py-4 text-sm text-white disabled:opacity-40 focus:outline-none focus:border-white/20" /></div>
+                      </div>
+                      <label className="flex items-center gap-3 cursor-pointer text-sm text-neutral-300"><input type="checkbox" checked={experienceData.is_current} onChange={(e) => setExperienceData({ ...experienceData, is_current: e.target.checked })} className="h-4 w-4 accent-white" />I currently work in this role</label>
+                      <div className="space-y-1.5"><label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">Description</label><textarea required rows={5} value={experienceData.description} onChange={(e) => setExperienceData({ ...experienceData, description: e.target.value })} className="w-full bg-neutral-950 border border-white/5 rounded-2xl px-5 py-4 text-sm leading-relaxed text-white focus:outline-none focus:border-white/20" placeholder="Describe your impact, responsibilities, and results..." /></div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="space-y-1.5"><label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">Skills (comma-separated)</label><input value={experienceData.skills} onChange={(e) => setExperienceData({ ...experienceData, skills: e.target.value })} className="w-full bg-neutral-950 border border-white/5 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-white/20" placeholder="React, Design Systems" /></div>
+                        <div className="space-y-1.5"><label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">Logo URL (optional)</label><input value={experienceData.company_logo} onChange={(e) => setExperienceData({ ...experienceData, company_logo: e.target.value })} className="w-full bg-neutral-950 border border-white/5 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-white/20" placeholder="https://..." /></div>
+                        <div className="space-y-1.5"><label className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 ml-1">Company URL (optional)</label><input value={experienceData.company_url} onChange={(e) => setExperienceData({ ...experienceData, company_url: e.target.value })} className="w-full bg-neutral-950 border border-white/5 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-white/20" placeholder="https://..." /></div>
+                      </div>
+                      <div className="flex gap-4"><button type="button" onClick={() => { setIsAddingExperience(false); setEditingExperienceId(null); setExperienceData(emptyExperience); }} className="flex-1 py-4 bg-neutral-800 text-white font-bold rounded-2xl hover:bg-neutral-700">Cancel</button><button type="submit" disabled={isSubmitting} className="flex-[2] py-4 bg-white text-black font-bold rounded-2xl hover:bg-neutral-200 disabled:opacity-50">{isSubmitting ? "Saving..." : editingExperienceId ? "Update Experience" : "Save Experience"}</button></div>
+                    </form>
+                  )}
+
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center"><h3 className="text-xl font-bold uppercase tracking-tight text-white">Experience entries <span className="text-neutral-500 tabular-nums">({experiences.length})</span></h3><span className="text-xs font-mono text-neutral-500">Use arrows to set timeline order</span></div>
+                    {experiences.map((experience, index) => <div key={experience.id} className="flex items-center justify-between gap-4 p-4 sm:p-6 bg-neutral-900/50 border border-white/5 rounded-[24px] group hover:border-white/10"><div className="flex min-w-0 items-center gap-4"><span className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-mono text-xs font-bold text-neutral-400 shrink-0">#{index + 1}</span><div className="min-w-0"><p className="font-bold text-base sm:text-lg text-white truncate">{experience.role}</p><p className="text-[10px] text-neutral-500 uppercase tracking-[0.2em] font-bold mt-0.5">{experience.company} · {experience.is_current ? "Current" : "Past role"}</p></div></div><div className="flex items-center gap-1 shrink-0"><button onClick={() => handleMoveExperience(index, "up")} disabled={index === 0 || isReordering} className="p-2.5 text-neutral-400 hover:text-white disabled:opacity-20"><ArrowUp size={16} /></button><button onClick={() => handleMoveExperience(index, "down")} disabled={index === experiences.length - 1 || isReordering} className="p-2.5 text-neutral-400 hover:text-white disabled:opacity-20"><ArrowDown size={16} /></button><button onClick={() => handleEditExperience(experience)} className="p-2.5 text-neutral-500 hover:text-white"><Pencil size={16} /></button><button onClick={() => handleDeleteExperience(experience.id)} className="p-2.5 text-neutral-500 hover:text-red-500"><Trash2 size={16} /></button></div></div>)}
                   </div>
                 </div>
               ) : (

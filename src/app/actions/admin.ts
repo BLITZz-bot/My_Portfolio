@@ -1,27 +1,13 @@
 "use server";
 
-import { createClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
-import { Project } from "@/lib/projects";
-import { Experience } from "@/lib/experience";
-import { supabase, verifyAdmin } from "@/lib/supabase"; // Import standard client and verification helper
-
-// Helper to get a privileged client only when needed for writes
-function getAdminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  console.log("getAdminClient initialization in admin.ts:", {
-    hasUrl: !!url,
-    hasKey: !!key,
-  });
-
-  if (!url || !key) {
-    throw new Error("Supabase Admin credentials (SUPABASE_SERVICE_ROLE_KEY) are missing in environment variables.");
-  }
-
-  return createClient(url, key);
-}
+import { Project } from "@/types/project";
+import { Experience } from "@/types/experience";
+import { SettingsFormData } from "@/types/settings";
+import { supabase } from "@/lib/supabase";
+import { getAdminClient } from "@/lib/supabase/admin";
+import { verifyAdmin } from "@/lib/security/auth-guard";
+import { isValidSafeUrl } from "@/lib/security/validation";
 
 // --- Auth Actions ---
 
@@ -49,7 +35,7 @@ export async function getSettings() {
       .single();
 
     if (error) {
-      console.error("Error fetching settings:", error);
+      console.error("Error fetching settings:", error.message);
       return null;
     }
 
@@ -60,26 +46,19 @@ export async function getSettings() {
   }
 }
 
-export async function updateSettings(formData: {
-  about_text?: string;
-  projects_built?: number;
-  hackathons_won?: number;
-  awards_won?: number;
-  location?: string;
-  location_status?: string;
-  skills?: string[];
-  vision_text?: string;
-  resume_url?: string;
-}, sessionToken: string) {
+export async function updateSettings(formData: SettingsFormData, sessionToken: string) {
   const authCheck = await verifyAdmin(sessionToken);
   if (!authCheck.authorized) {
-    console.error("Unauthorized settings update attempt:", authCheck.error);
     return { success: false, error: authCheck.error || "Unauthorized" };
+  }
+
+  // URL security check
+  if (formData.resume_url && !isValidSafeUrl(formData.resume_url)) {
+    return { success: false, error: "Invalid resume URL protocol." };
   }
 
   try {
     const supabaseAdmin = getAdminClient();
-    // Use upsert to ensure the row exists (id: 1 is our single settings row)
     const { error } = await supabaseAdmin
       .from("portfolio_settings")
       .upsert({ 
@@ -88,7 +67,7 @@ export async function updateSettings(formData: {
       });
 
     if (error) {
-      console.error("Error updating settings:", error);
+      console.error("Error updating settings:", error.message);
       return { success: false, error: error.message };
     }
 
@@ -101,7 +80,7 @@ export async function updateSettings(formData: {
 
 // --- Project Actions ---
 
-export async function getProjects() {
+export async function getProjects(): Promise<Project[]> {
   if (!supabase) return [];
 
   try {
@@ -111,11 +90,11 @@ export async function getProjects() {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Error fetching projects:", error);
+      console.error("Error fetching projects:", error.message);
       return [];
     }
 
-    return data;
+    return (data as Project[]) || [];
   } catch (err) {
     console.error("getProjects failed:", err);
     return [];
@@ -128,12 +107,20 @@ export async function addProject(formData: Omit<Project, "id">, sessionToken: st
     return { success: false, error: authCheck.error || "Unauthorized" };
   }
 
+  // Safe URL checks
+  if (formData.link && !isValidSafeUrl(formData.link)) {
+    return { success: false, error: "Invalid project link URL." };
+  }
+  if (formData.github && !isValidSafeUrl(formData.github)) {
+    return { success: false, error: "Invalid GitHub repository URL." };
+  }
+
   try {
     const supabaseAdmin = getAdminClient();
     const { error } = await supabaseAdmin.from("projects").insert([formData]);
 
     if (error) {
-      console.error("Error adding project:", error);
+      console.error("Error adding project:", error.message);
       return { success: false, error: error.message };
     }
 
@@ -156,7 +143,7 @@ export async function deleteProject(projectId: string, sessionToken: string) {
     const { error } = await supabaseAdmin.from("projects").delete().eq("id", projectId);
 
     if (error) {
-      console.error("Error deleting project:", error);
+      console.error("Error deleting project:", error.message);
       return { success: false, error: error.message };
     }
 
@@ -174,6 +161,13 @@ export async function updateProject(projectId: string, formData: Partial<Project
     return { success: false, error: authCheck.error || "Unauthorized" };
   }
 
+  if (formData.link && !isValidSafeUrl(formData.link)) {
+    return { success: false, error: "Invalid project link URL." };
+  }
+  if (formData.github && !isValidSafeUrl(formData.github)) {
+    return { success: false, error: "Invalid GitHub repository URL." };
+  }
+
   try {
     const supabaseAdmin = getAdminClient();
     const { error } = await supabaseAdmin
@@ -182,7 +176,7 @@ export async function updateProject(projectId: string, formData: Partial<Project
       .eq("id", projectId);
 
     if (error) {
-      console.error("Error updating project:", error);
+      console.error("Error updating project:", error.message);
       return { success: false, error: error.message };
     }
 
@@ -196,7 +190,7 @@ export async function updateProject(projectId: string, formData: Partial<Project
 
 // --- Ongoing Project Actions ---
 
-export async function getOngoingProjects() {
+export async function getOngoingProjects(): Promise<Project[]> {
   if (!supabase) return [];
 
   try {
@@ -206,11 +200,11 @@ export async function getOngoingProjects() {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Error fetching ongoing projects:", error);
+      console.error("Error fetching ongoing projects:", error.message);
       return [];
     }
 
-    return data;
+    return (data as Project[]) || [];
   } catch (err) {
     console.error("getOngoingProjects failed:", err);
     return [];
@@ -223,12 +217,19 @@ export async function addOngoingProject(formData: Omit<Project, "id">, sessionTo
     return { success: false, error: authCheck.error || "Unauthorized" };
   }
 
+  if (formData.link && !isValidSafeUrl(formData.link)) {
+    return { success: false, error: "Invalid initiative link URL." };
+  }
+  if (formData.github && !isValidSafeUrl(formData.github)) {
+    return { success: false, error: "Invalid GitHub repository URL." };
+  }
+
   try {
     const supabaseAdmin = getAdminClient();
     const { error } = await supabaseAdmin.from("ongoing_projects").insert([formData]);
 
     if (error) {
-      console.error("Error adding ongoing project:", error);
+      console.error("Error adding ongoing project:", error.message);
       return { success: false, error: error.message };
     }
 
@@ -251,7 +252,7 @@ export async function deleteOngoingProject(projectId: string, sessionToken: stri
     const { error } = await supabaseAdmin.from("ongoing_projects").delete().eq("id", projectId);
 
     if (error) {
-      console.error("Error deleting ongoing project:", error);
+      console.error("Error deleting ongoing project:", error.message);
       return { success: false, error: error.message };
     }
 
@@ -269,6 +270,13 @@ export async function updateOngoingProject(projectId: string, formData: Partial<
     return { success: false, error: authCheck.error || "Unauthorized" };
   }
 
+  if (formData.link && !isValidSafeUrl(formData.link)) {
+    return { success: false, error: "Invalid initiative link URL." };
+  }
+  if (formData.github && !isValidSafeUrl(formData.github)) {
+    return { success: false, error: "Invalid GitHub repository URL." };
+  }
+
   try {
     const supabaseAdmin = getAdminClient();
     const { error } = await supabaseAdmin
@@ -277,7 +285,7 @@ export async function updateOngoingProject(projectId: string, formData: Partial<
       .eq("id", projectId);
 
     if (error) {
-      console.error("Error updating ongoing project:", error);
+      console.error("Error updating ongoing project:", error.message);
       return { success: false, error: error.message };
     }
 
@@ -351,7 +359,7 @@ export async function reorderOngoingProjects(orderedIds: string[], sessionToken:
 
 // --- Experience Actions ---
 
-export async function getExperiences() {
+export async function getExperiences(): Promise<Experience[]> {
   if (!supabase) return [];
 
   try {
@@ -362,11 +370,11 @@ export async function getExperiences() {
       .order("start_date", { ascending: false });
 
     if (error) {
-      console.error("Error fetching experiences:", error);
+      console.error("Error fetching experiences:", error.message);
       return [];
     }
 
-    return data;
+    return (data as Experience[]) || [];
   } catch (err) {
     console.error("getExperiences failed:", err);
     return [];
@@ -376,6 +384,10 @@ export async function getExperiences() {
 export async function addExperience(formData: Omit<Experience, "id" | "created_at">, sessionToken: string) {
   const authCheck = await verifyAdmin(sessionToken);
   if (!authCheck.authorized) return { success: false, error: authCheck.error || "Unauthorized" };
+
+  if (formData.company_url && !isValidSafeUrl(formData.company_url)) {
+    return { success: false, error: "Invalid company URL." };
+  }
 
   try {
     const { error } = await getAdminClient().from("experiences").insert([formData]);
@@ -390,6 +402,10 @@ export async function addExperience(formData: Omit<Experience, "id" | "created_a
 export async function updateExperience(experienceId: string, formData: Partial<Experience>, sessionToken: string) {
   const authCheck = await verifyAdmin(sessionToken);
   if (!authCheck.authorized) return { success: false, error: authCheck.error || "Unauthorized" };
+
+  if (formData.company_url && !isValidSafeUrl(formData.company_url)) {
+    return { success: false, error: "Invalid company URL." };
+  }
 
   try {
     const { error } = await getAdminClient().from("experiences").update(formData).eq("id", experienceId);
@@ -430,4 +446,3 @@ export async function reorderExperiences(orderedIds: string[], sessionToken: str
     return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
-

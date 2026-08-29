@@ -1,49 +1,46 @@
 "use server";
 
-import { supabase, verifyAdmin } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
+import { getAdminClient } from "@/lib/supabase/admin";
+import { verifyAdmin } from "@/lib/security/auth-guard";
+import { sanitizeString, isValidEmail } from "@/lib/security/validation";
+import { Comment, PublicComment, CommentFormData } from "@/types/comment";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@supabase/supabase-js";
 
-function getAdminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  console.log("getAdminClient initialization in comments.ts:", {
-    hasUrl: !!url,
-    hasKey: !!key,
-  });
-
-  if (!url || !key) {
-    throw new Error("Supabase Admin credentials (SUPABASE_SERVICE_ROLE_KEY) are missing in environment variables.");
-  }
-
-  return createClient(url, key);
-}
-
-export async function getApprovedComments() {
+/**
+ * Public Action: Fetch approved testimonials for display
+ * Applies data minimization: Omits private email and user UUIDs
+ */
+export async function getApprovedComments(): Promise<PublicComment[]> {
   if (!supabase) {
-    console.error("Supabase client is not initialized.");
     return [];
   }
 
-  const { data, error } = await supabase
-    .from("comments")
-    .select("*")
-    .eq("approved", true)
-    .order("created_at", { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from("comments")
+      .select("id, name, role, designation, content, created_at")
+      .eq("approved", true)
+      .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("Error fetching comments:", error);
+    if (error) {
+      console.error("Error fetching comments:", error.message);
+      return [];
+    }
+
+    return (data as PublicComment[]) || [];
+  } catch (err) {
+    console.error("getApprovedComments failed:", err);
     return [];
   }
-
-  return data;
 }
 
-export async function getAllComments(sessionToken: string) {
+/**
+ * Admin Action: Fetch all comments (both pending and approved) with full details
+ */
+export async function getAllComments(sessionToken: string): Promise<Comment[]> {
   const authCheck = await verifyAdmin(sessionToken);
   if (!authCheck.authorized) {
-    console.error("Unauthorized access to comments:", authCheck.error);
     return [];
   }
 
@@ -55,50 +52,80 @@ export async function getAllComments(sessionToken: string) {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Error fetching all comments:", error);
+      console.error("Error fetching all comments:", error.message);
       return [];
     }
 
-    return data;
+    return (data as Comment[]) || [];
   } catch (err) {
     console.error("getAllComments failed:", err);
     return [];
   }
 }
 
-export async function submitComment(formData: {
-  name: string;
-  email: string;
-  role: string;
-  designation?: string;
-  content: string;
-  user_id?: string;
-}) {
+/**
+ * Public Action: Submit a testimonial for moderation
+ * Sanitizes input and strictly validates length and email format
+ */
+export async function submitComment(formData: CommentFormData) {
   if (!supabase) {
-    return { success: false, error: "Supabase client is not initialized." };
+    return { success: false, error: "Database service unavailable." };
   }
 
-  const { error } = await supabase.from("comments").insert([
-    {
-      ...formData,
-      approved: false, // Default to false for moderation
-    },
-  ]);
+  const cleanName = sanitizeString(formData.name, 100);
+  const cleanEmail = formData.email ? formData.email.trim().toLowerCase() : "";
+  const cleanRole = sanitizeString(formData.role || "Client", 50);
+  const cleanDesignation = sanitizeString(formData.designation, 100);
+  const cleanContent = sanitizeString(formData.content, 2000);
 
-  if (error) {
-    console.error("Error submitting comment:", error);
-    return { success: false, error: error.message };
+  // Validation
+  if (!cleanName || cleanName.length < 2) {
+    return { success: false, error: "Please enter a valid name (at least 2 characters)." };
+  }
+  if (!cleanEmail || !isValidEmail(cleanEmail)) {
+    return { success: false, error: "Please provide a valid email address." };
+  }
+  if (!cleanContent || cleanContent.length < 5) {
+    return { success: false, error: "Feedback must be at least 5 characters long." };
   }
 
-  revalidatePath("/");
-  return { success: true };
+  try {
+    const { error } = await supabase.from("comments").insert([
+      {
+        name: cleanName,
+        email: cleanEmail,
+        role: cleanRole,
+        designation: cleanDesignation || null,
+        content: cleanContent,
+        user_id: formData.user_id || null,
+        approved: false, // Default to false for mandatory moderation
+      },
+    ]);
+
+    if (error) {
+      console.error("Error submitting comment:", error.message);
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath("/");
+    revalidatePath("/comments");
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
 }
 
-// Admin Action: Approve Comment
+/**
+ * Admin Action: Approve Comment
+ */
 export async function approveComment(commentId: string, sessionToken: string) {
   const authCheck = await verifyAdmin(sessionToken);
   if (!authCheck.authorized) {
     return { success: false, error: authCheck.error || "Unauthorized" };
+  }
+
+  if (!commentId || typeof commentId !== "string") {
+    return { success: false, error: "Invalid comment identifier." };
   }
 
   try {
@@ -111,17 +138,24 @@ export async function approveComment(commentId: string, sessionToken: string) {
     if (error) return { success: false, error: error.message };
     
     revalidatePath("/");
+    revalidatePath("/comments");
     return { success: true };
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
 
-// Admin Action: Delete/Reject Comment
+/**
+ * Admin Action: Delete/Reject Comment
+ */
 export async function deleteComment(commentId: string, sessionToken: string) {
   const authCheck = await verifyAdmin(sessionToken);
   if (!authCheck.authorized) {
     return { success: false, error: authCheck.error || "Unauthorized" };
+  }
+
+  if (!commentId || typeof commentId !== "string") {
+    return { success: false, error: "Invalid comment identifier." };
   }
 
   try {
@@ -134,6 +168,7 @@ export async function deleteComment(commentId: string, sessionToken: string) {
     if (error) return { success: false, error: error.message };
     
     revalidatePath("/");
+    revalidatePath("/comments");
     return { success: true };
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : String(err) };

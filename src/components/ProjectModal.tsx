@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -16,7 +16,7 @@ import {
   Eye
 } from "lucide-react";
 import { Github } from "@/components/Icons";
-import { Project } from "@/lib/projects";
+import { Project, ParsedFeature } from "@/types/project";
 import { useLenis } from "lenis/react";
 
 interface ProjectModalProps {
@@ -24,28 +24,19 @@ interface ProjectModalProps {
   onClose: () => void;
 }
 
-interface ParsedFeature {
-  icon?: string;
-  badge?: string;
-  title: string;
-  description: string;
+// React 19 hydration-safe check without setState-in-effect
+const emptySubscribe = () => () => {};
+function useIsMounted() {
+  return useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
 }
 
-export function ProjectModal({ project, onClose }: ProjectModalProps) {
-  const lenis = useLenis();
-  const [mounted, setMounted] = useState(false);
+function ProjectModalContent({ project, onClose }: { project: Project; onClose: () => void }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Reset image index when project changes
-  useEffect(() => {
-    setCurrentImageIndex(0);
-    setIsLightboxOpen(false);
-  }, [project]);
 
   // Gallery Navigation
   const nextImage = useCallback(() => {
@@ -60,8 +51,6 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
 
   // Keyboard navigation
   useEffect(() => {
-    if (!project) return;
-
     const handleKeydown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         if (isLightboxOpen) {
@@ -78,34 +67,14 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
 
     window.addEventListener("keydown", handleKeydown);
     return () => window.removeEventListener("keydown", handleKeydown);
-  }, [project, isLightboxOpen, onClose, nextImage, prevImage]);
-
-  // Handle body scroll locking with Lenis integration
-  useEffect(() => {
-    if (project) {
-      document.body.style.overflow = "hidden";
-      document.documentElement.style.overflow = "hidden";
-      document.body.classList.add("projects-modal-open");
-      lenis?.stop();
-    } else {
-      document.body.style.overflow = "";
-      document.documentElement.style.overflow = "";
-      document.body.classList.remove("projects-modal-open");
-      lenis?.start();
-    }
-    return () => {
-      document.body.style.overflow = "";
-      document.documentElement.style.overflow = "";
-      document.body.classList.remove("projects-modal-open");
-      lenis?.start();
-    };
-  }, [project, lenis]);
+  }, [isLightboxOpen, onClose, nextImage, prevImage]);
 
   // Smart Description & Feature Parser (supports numbers, emojis, bullets, headlines)
+  const description = project.description;
   const { introParagraphs, features } = useMemo(() => {
-    if (!project?.description) return { introParagraphs: [], features: [] };
+    if (!description) return { introParagraphs: [], features: [] };
 
-    const rawLines = project.description.split("\n").map(l => l.trim()).filter(Boolean);
+    const rawLines = description.split("\n").map(l => l.trim()).filter(Boolean);
     const intro: string[] = [];
     const featList: ParsedFeature[] = [];
 
@@ -181,15 +150,13 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
     }
 
     return { introParagraphs: intro, features: featList };
-  }, [project?.description]);
-
-  if (!mounted || !project) return null;
+  }, [description]);
 
   const hasLiveDemo = project.link && project.link !== "#" && project.link.trim() !== "";
   const hasGithub = project.github && project.github !== "#" && project.github.trim() !== "";
   const galleryImages = project.gallery && project.gallery.length > 0 ? project.gallery : [project.thumbnail];
 
-  const modalContent = (
+  return (
     <AnimatePresence>
       <div className="fixed inset-0 z-[9999] flex flex-col bg-neutral-950 text-white overflow-hidden select-none">
         {/* Ambient Blurred Background Glow */}
@@ -248,84 +215,83 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
               onClick={onClose}
               className="p-2 sm:p-2.5 rounded-full bg-neutral-900 border border-white/15 text-neutral-300 hover:text-white hover:bg-neutral-800 hover:border-white/30 transition-all group cursor-pointer shadow-md flex items-center justify-center"
               title="Close (Esc)"
-              aria-label="Close modal"
             >
               <X size={18} className="group-hover:rotate-90 transition-transform duration-200" />
             </button>
           </div>
         </header>
 
-        {/* Main Full-Screen Split Viewport */}
-        <div className="relative z-10 flex-1 flex flex-col lg:flex-row overflow-hidden">
+        {/* Main Body - Split Layout (Image Gallery Left, Details Right) */}
+        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative z-10">
           
-          {/* Left Column: Interactive Gallery Showcase (60-65%) */}
-          <section className="w-full lg:w-[62%] xl:w-[65%] flex flex-col bg-black/60 border-b lg:border-b-0 lg:border-r border-white/10 overflow-hidden relative">
+          {/* Left Column: Visual Showcase (62-65%) */}
+          <section className="w-full lg:w-[62%] xl:w-[65%] flex flex-col justify-between bg-neutral-900/40 border-b lg:border-b-0 lg:border-r border-white/10 relative overflow-hidden shrink-0 lg:shrink">
             
-            {/* Gallery Viewport */}
-            <div className="relative flex-1 min-h-[300px] sm:min-h-[420px] lg:min-h-0 flex items-center justify-center p-4 sm:p-8 overflow-hidden group">
+            {/* Viewport Area for Featured Image */}
+            <div className="relative flex-1 min-h-[300px] sm:min-h-[420px] lg:min-h-0 flex items-center justify-center p-4 sm:p-8 lg:p-12 overflow-hidden group/stage">
               
-              {/* Subtle Stage Grid Pattern */}
-              <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none opacity-40" />
+              {/* Radial backdrop highlight */}
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.06)_0%,transparent_70%)] pointer-events-none" />
 
-              {/* Main Image with Zoom Lightbox Trigger */}
-              <div 
-                className="relative w-full h-full max-h-[70vh] flex items-center justify-center cursor-zoom-in"
-                onClick={() => setIsLightboxOpen(true)}
-              >
+              {/* Main Image with AnimatePresence */}
+              <div className="relative max-w-full max-h-full flex items-center justify-center">
                 <AnimatePresence mode="wait">
-                  <motion.img
+                  <motion.div
                     key={currentImageIndex}
-                    src={galleryImages[currentImageIndex]}
-                    alt={`${project.title} screenshot ${currentImageIndex + 1}`}
                     initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.98 }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl border border-white/10 select-none"
-                  />
-                </AnimatePresence>
+                    transition={{ duration: 0.25, ease: "easeOut" }}
+                    className="relative max-h-[50vh] sm:max-h-[60vh] lg:max-h-[68vh] rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-neutral-950 flex items-center justify-center"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={galleryImages[currentImageIndex]}
+                      alt={`${project.title} slide ${currentImageIndex + 1}`}
+                      className="w-full h-full object-contain max-h-[50vh] sm:max-h-[60vh] lg:max-h-[68vh]"
+                    />
 
-                {/* Click to Zoom Pill Indicator */}
-                <div className="absolute bottom-4 right-4 hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-neutral-300 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Eye size={13} />
-                  <span>Click to expand</span>
-                </div>
+                    {/* Quick-Zoom trigger button on hover */}
+                    <button
+                      onClick={() => setIsLightboxOpen(true)}
+                      className="absolute inset-0 bg-neutral-950/0 hover:bg-neutral-950/40 flex items-center justify-center transition-all opacity-0 hover:opacity-100 cursor-zoom-in group/zoom"
+                    >
+                      <div className="px-4 py-2 rounded-full bg-neutral-900/90 backdrop-blur-md border border-white/20 text-white text-xs font-semibold flex items-center gap-2 shadow-2xl transform scale-90 group-hover/zoom:scale-100 transition-transform">
+                        <Eye size={14} />
+                        <span>Expand View</span>
+                      </div>
+                    </button>
+                  </motion.div>
+                </AnimatePresence>
               </div>
 
-              {/* Carousel Arrows (if > 1 image) */}
+              {/* Left/Right Navigation Arrows */}
               {galleryImages.length > 1 && (
                 <>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      prevImage();
-                    }}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 p-3 sm:p-3.5 rounded-full bg-neutral-900/80 backdrop-blur-md text-white border border-white/15 hover:bg-neutral-800 hover:border-white/30 hover:scale-105 active:scale-95 transition-all shadow-xl z-20 cursor-pointer"
-                    aria-label="Previous screenshot"
+                    onClick={prevImage}
+                    className="absolute left-4 sm:left-6 p-2.5 sm:p-3 rounded-full bg-neutral-900/80 backdrop-blur-md text-white border border-white/15 hover:bg-neutral-800 hover:border-white/30 transition-all cursor-pointer shadow-lg active:scale-90"
+                    title="Previous Image"
                   >
-                    <ChevronLeft size={22} />
+                    <ChevronLeft size={20} />
                   </button>
-
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      nextImage();
-                    }}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 p-3 sm:p-3.5 rounded-full bg-neutral-900/80 backdrop-blur-md text-white border border-white/15 hover:bg-neutral-800 hover:border-white/30 hover:scale-105 active:scale-95 transition-all shadow-xl z-20 cursor-pointer"
-                    aria-label="Next screenshot"
+                    onClick={nextImage}
+                    className="absolute right-4 sm:right-6 p-2.5 sm:p-3 rounded-full bg-neutral-900/80 backdrop-blur-md text-white border border-white/15 hover:bg-neutral-800 hover:border-white/30 transition-all cursor-pointer shadow-lg active:scale-90"
+                    title="Next Image"
                   >
-                    <ChevronRight size={22} />
+                    <ChevronRight size={20} />
                   </button>
                 </>
               )}
 
-              {/* Counter Badge */}
-              <div className="absolute top-4 left-4 z-20 px-3 py-1 rounded-full bg-neutral-900/80 backdrop-blur-md border border-white/10 text-xs font-mono text-neutral-300">
-                {String(currentImageIndex + 1).padStart(2, "0")} / {String(galleryImages.length).padStart(2, "0")}
+              {/* Bottom Image Counter Pill */}
+              <div className="absolute bottom-4 left-6 px-3 py-1 rounded-full bg-neutral-950/80 backdrop-blur-md border border-white/10 text-[11px] font-mono tracking-widest text-neutral-400 uppercase">
+                {currentImageIndex + 1} / {galleryImages.length}
               </div>
             </div>
 
-            {/* Bottom Filmstrip Thumbnails Bar (if > 1 image) */}
+            {/* Thumbnail Strip (Bottom of left pane) */}
             {galleryImages.length > 1 && (
               <div className="p-3 sm:p-4 bg-neutral-950/90 border-t border-white/10 flex items-center justify-center gap-2 sm:gap-3 overflow-x-auto custom-scrollbar shrink-0">
                 {galleryImages.map((imgUrl, idx) => (
@@ -338,6 +304,7 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
                         : "border-white/10 opacity-50 hover:opacity-90 hover:border-white/30"
                     }`}
                   >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={imgUrl}
                       alt={`Thumbnail ${idx + 1}`}
@@ -358,91 +325,66 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
               
               {/* Category & Title Header */}
               <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-xs font-mono uppercase tracking-widest text-neutral-400 font-semibold">
-                    {project.category}
-                  </span>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-mono tracking-widest text-neutral-400 uppercase">Case Study</span>
                   <span className="text-neutral-600">•</span>
-                  <span className="text-xs font-mono uppercase tracking-widest text-emerald-400 font-medium">
-                    Verified Showcase
-                  </span>
+                  <span className="text-xs font-mono tracking-widest text-neutral-400 uppercase">{project.category}</span>
                 </div>
-                
-                <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white uppercase leading-none">
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white uppercase">
                   {project.title}
                 </h1>
               </div>
 
-              {/* Quick Meta Cards */}
-              <div className="grid grid-cols-2 gap-3 p-4 rounded-2xl bg-neutral-900/60 border border-white/5 backdrop-blur-sm">
-                <div>
-                  <p className="text-[11px] font-mono text-neutral-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                    <Layers size={12} className="text-neutral-400" />
-                    Category
-                  </p>
-                  <p className="text-sm font-semibold text-white truncate">{project.category}</p>
-                </div>
-                <div>
-                  <p className="text-[11px] font-mono text-neutral-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                    <Code2 size={12} className="text-neutral-400" />
-                    Stack
-                  </p>
-                  <p className="text-sm font-semibold text-white truncate">
-                    {project.technologies ? `${project.technologies.length} Technologies` : "Modern Web"}
-                  </p>
-                </div>
-              </div>
-
-              {/* Overview / Introduction */}
+              {/* Introduction / Overview Paragraphs */}
               {introParagraphs.length > 0 && (
-                <div className="space-y-3">
-                  <h3 className="text-xs font-mono font-bold uppercase tracking-widest text-neutral-400 flex items-center gap-2">
-                    <Sparkles size={14} className="text-neutral-400" />
-                    About Project
-                  </h3>
-                  <div className="space-y-3 text-sm sm:text-base text-neutral-300 leading-relaxed font-light">
-                    {introParagraphs.map((para, i) => (
-                      <p key={i} className="leading-relaxed">
-                        {para}
-                      </p>
-                    ))}
-                  </div>
+                <div className="space-y-3 text-neutral-300 text-sm sm:text-base leading-relaxed">
+                  {introParagraphs.map((paragraph, idx) => (
+                    <p key={idx}>{paragraph}</p>
+                  ))}
                 </div>
               )}
 
-              {/* Key Features / Highlights (Rendered as Sleek Cards) */}
+              {/* Structured Key Features Section */}
               {features.length > 0 && (
-                <div className="space-y-3">
-                  <h3 className="text-xs font-mono font-bold uppercase tracking-widest text-neutral-400 flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-emerald-400" />
-                    Key Highlights & Architecture
-                  </h3>
-                  <div className="space-y-2.5">
-                    {features.map((feat, i) => (
-                      <div
-                        key={i}
-                        className="p-3.5 sm:p-4 rounded-xl bg-neutral-900/70 border border-white/10 hover:border-white/20 transition-colors"
+                <div className="space-y-4 pt-2">
+                  <div className="flex items-center gap-2 border-b border-white/10 pb-3">
+                    <Sparkles size={16} className="text-neutral-400" />
+                    <h3 className="text-xs font-mono uppercase tracking-widest text-neutral-400 font-bold">
+                      Key Highlights & Features
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3">
+                    {features.map((feat, idx) => (
+                      <div 
+                        key={idx}
+                        className="p-4 rounded-2xl bg-neutral-900/50 border border-white/5 hover:border-white/15 transition-all duration-200 flex items-start gap-3.5 group/card"
                       >
-                        <div className="flex items-start gap-3">
-                          {feat.badge ? (
-                            <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-xs font-mono font-bold text-emerald-400 shrink-0 mt-0.5">
-                              {feat.badge}
-                            </span>
-                          ) : feat.icon ? (
-                            <span className="text-xl shrink-0 mt-0.5">{feat.icon}</span>
-                          ) : (
-                            <div className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 mt-2" />
-                          )}
-                          <div>
-                            <h4 className="text-sm font-bold text-white tracking-wide">
-                              {feat.title}
-                            </h4>
-                            {feat.description && (
-                              <p className="text-xs sm:text-sm text-neutral-400 mt-1 leading-relaxed">
-                                {feat.description}
-                              </p>
-                            )}
+                        {/* Feature Badge or Icon */}
+                        {feat.badge ? (
+                          <div className="shrink-0 w-7 h-7 rounded-lg bg-white/5 border border-white/10 font-mono text-xs font-bold text-neutral-300 flex items-center justify-center group-hover/card:border-white/30 group-hover/card:text-white transition-colors">
+                            {feat.badge}
                           </div>
+                        ) : feat.icon ? (
+                          <div className="shrink-0 text-base leading-none pt-0.5">
+                            {feat.icon}
+                          </div>
+                        ) : (
+                          <div className="shrink-0 w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                            <CheckCircle2 size={14} />
+                          </div>
+                        )}
+
+                        {/* Title & Description */}
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-sm font-semibold text-white tracking-tight leading-snug">
+                            {feat.title}
+                          </h4>
+                          {feat.description && (
+                            <p className="text-xs text-neutral-400 mt-1 leading-relaxed">
+                              {feat.description}
+                            </p>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -450,18 +392,21 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
                 </div>
               )}
 
-              {/* Technologies Stack Badges */}
+              {/* Technologies Stack Tags */}
               {project.technologies && project.technologies.length > 0 && (
-                <div className="space-y-3">
-                  <h3 className="text-xs font-mono font-bold uppercase tracking-widest text-neutral-400 flex items-center gap-2">
-                    <Code2 size={14} className="text-neutral-400" />
-                    Technologies & Tools
-                  </h3>
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center gap-2 border-b border-white/10 pb-3">
+                    <Code2 size={16} className="text-neutral-400" />
+                    <h3 className="text-xs font-mono uppercase tracking-widest text-neutral-400 font-bold">
+                      Technologies & Tools
+                    </h3>
+                  </div>
+
                   <div className="flex flex-wrap gap-2">
-                    {project.technologies.map((tech) => (
+                    {project.technologies.map((tech, idx) => (
                       <span
-                        key={tech}
-                        className="px-3 py-1.5 rounded-lg bg-neutral-900 border border-white/10 text-xs font-medium text-neutral-300 hover:border-white/30 hover:text-white transition-all shadow-sm"
+                        key={idx}
+                        className="px-3 py-1.5 rounded-xl bg-neutral-900 border border-white/10 text-xs font-medium text-neutral-300 hover:text-white hover:border-white/20 transition-colors"
                       >
                         {tech}
                       </span>
@@ -469,20 +414,18 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
                   </div>
                 </div>
               )}
-            </div>
 
-            {/* Sticky/Bottom Primary Action CTA Buttons */}
-            <div className="p-6 sm:p-8 bg-neutral-950 border-t border-white/10 space-y-3 shrink-0">
-              <div className="flex flex-col sm:flex-row gap-3">
+              {/* External Links Section */}
+              <div className="pt-4 space-y-3">
                 {hasLiveDemo && (
                   <a
                     href={project.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 py-3.5 px-6 rounded-xl bg-white text-black font-bold text-sm flex items-center justify-center gap-2 hover:bg-neutral-200 transition-all shadow-lg shadow-white/10 active:scale-98 group"
+                    className="w-full py-3.5 px-5 rounded-2xl bg-white text-black font-bold text-sm flex items-center justify-center gap-2 hover:bg-neutral-200 transition-all shadow-lg shadow-white/10 active:scale-[0.99]"
                   >
-                    <span>Visit Live Project</span>
-                    <ArrowUpRight size={18} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                    <span>Launch Live Application</span>
+                    <ArrowUpRight size={16} strokeWidth={2.5} />
                   </a>
                 )}
 
@@ -491,29 +434,37 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
                     href={project.github}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`py-3.5 px-6 rounded-xl bg-neutral-900 border border-white/15 text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-neutral-800 hover:border-white/30 transition-all active:scale-98 ${
-                      !hasLiveDemo ? "w-full" : "flex-1"
-                    }`}
+                    className="w-full py-3.5 px-5 rounded-2xl bg-neutral-900 border border-white/15 text-white font-medium text-sm flex items-center justify-center gap-2 hover:bg-neutral-800 hover:border-white/30 transition-all active:scale-[0.99]"
                   >
-                    <Github size={18} />
-                    <span>View Source</span>
+                    <Github size={16} />
+                    <span>View Repository on GitHub</span>
                   </a>
                 )}
               </div>
 
-              {!hasLiveDemo && !hasGithub && (
-                <div className="text-center py-2 text-xs font-mono text-neutral-500">
-                  Internal / Proprietary Project
-                </div>
-              )}
+            </div>
+
+            {/* Sticky Bottom Footer Meta */}
+            <div className="p-6 border-t border-white/10 bg-neutral-950/80 backdrop-blur-md flex items-center justify-between text-xs font-mono text-neutral-500">
+              <div className="flex items-center gap-2">
+                <Layers size={14} />
+                <span>ID: {project.id ? project.id.slice(0, 8) : "local"}</span>
+              </div>
+              <button
+                onClick={onClose}
+                className="hover:text-white transition-colors cursor-pointer"
+              >
+                ESC TO CLOSE
+              </button>
             </div>
           </aside>
         </div>
 
-        {/* Fullscreen High-Resolution Lightbox Overlay */}
+        {/* FULLSCREEN LIGHTBOX MODAL */}
         <AnimatePresence>
           {isLightboxOpen && (
-            <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/98 backdrop-blur-2xl">
+            <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/95 backdrop-blur-xl select-none">
+              {/* Click outside to close */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -537,16 +488,21 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
                 onClick={(e) => e.stopPropagation()}
               >
                 <AnimatePresence mode="wait">
-                  <motion.img
+                  <motion.div
                     key={currentImageIndex}
-                    src={galleryImages[currentImageIndex]}
-                    alt={`${project.title} full view`}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.25 }}
-                    className="max-w-full max-h-[82vh] object-contain rounded-2xl shadow-2xl border border-white/10"
-                  />
+                    className="max-w-full max-h-[82vh] flex items-center justify-center"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={galleryImages[currentImageIndex]}
+                      alt={`${project.title} full view`}
+                      className="max-w-full max-h-[82vh] object-contain rounded-2xl shadow-2xl border border-white/10"
+                    />
+                  </motion.div>
                 </AnimatePresence>
 
                 {/* Lightbox Navigation Arrows */}
@@ -593,6 +549,37 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
       </div>
     </AnimatePresence>
   );
+}
 
-  return createPortal(modalContent, document.body);
+export function ProjectModal({ project, onClose }: ProjectModalProps) {
+  const lenis = useLenis();
+  const isMounted = useIsMounted();
+
+  // Handle body scroll locking with Lenis integration
+  useEffect(() => {
+    if (project) {
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+      document.body.classList.add("projects-modal-open");
+      lenis?.stop();
+    } else {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+      document.body.classList.remove("projects-modal-open");
+      lenis?.start();
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+      document.body.classList.remove("projects-modal-open");
+      lenis?.start();
+    };
+  }, [project, lenis]);
+
+  if (!isMounted || !project) return null;
+
+  return createPortal(
+    <ProjectModalContent key={project.id} project={project} onClose={onClose} />,
+    document.body
+  );
 }

@@ -6,15 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { getApprovedComments } from "@/app/actions/comments";
 import { Noise } from "@/components/Noise";
-
-interface Comment {
-  id: string;
-  name: string;
-  role: string;
-  designation?: string;
-  content: string;
-  approved: boolean;
-}
+import { PublicComment } from "@/types/comment";
 
 const CommentSkeleton = () => (
   <div className="p-8 rounded-3xl bg-neutral-900/30 border border-neutral-800/40 animate-pulse space-y-4">
@@ -30,25 +22,33 @@ const CommentSkeleton = () => (
 );
 
 export default function CommentsPage() {
-  const [dbComments, setDbComments] = useState<Comment[]>([]);
+  const [dbComments, setDbComments] = useState<PublicComment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    let isSubscribed = true;
+
     const loadComments = async () => {
       setIsLoading(true);
       try {
         const data = await getApprovedComments();
-        if (data) {
-          setDbComments(data as Comment[]);
+        if (isSubscribed && data) {
+          setDbComments(data);
         }
       } catch (e) {
         console.error("Error loading comments:", e);
       } finally {
-        setIsLoading(false);
+        if (isSubscribed) {
+          setIsLoading(false);
+        }
       }
     };
+
     loadComments();
+    return () => {
+      isSubscribed = false;
+    };
   }, []);
 
   return (

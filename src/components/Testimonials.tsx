@@ -8,16 +8,8 @@ import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
 import Link from "next/link";
 import Image from "next/image";
+import { PublicComment } from "@/types/comment";
 import { useLenis } from "lenis/react";
-
-interface Comment {
-  id: string;
-  name: string;
-  role: string;
-  designation?: string;
-  content: string;
-  approved: boolean;
-}
 
 const CommentSkeleton = () => (
   <div className="p-8 rounded-3xl bg-neutral-900/30 border border-neutral-800/40 animate-pulse space-y-4">
@@ -40,7 +32,7 @@ export function Testimonials() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [showToast, setShowToast] = useState(false);
-  const [dbComments, setDbComments] = useState<Comment[]>([]);
+  const [dbComments, setDbComments] = useState<PublicComment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   const fetchComments = async () => {
@@ -306,7 +298,7 @@ export function Testimonials() {
                 onClick={() => supabase?.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } })}
                 className="w-full py-4 bg-white text-black font-bold rounded-2xl flex items-center justify-center gap-3 hover:bg-neutral-200 transition-colors shadow-lg shadow-white/5"
               >
-                <Image src="https://www.google.com/favicon.ico" width={16} height={16} className="w-4 h-4" alt="" />
+                <Image src="https://www.google.com/favicon.ico" width={16} height={16} className="w-4 h-4" alt="" unoptimized />
                 Continue with Google
               </button>
               

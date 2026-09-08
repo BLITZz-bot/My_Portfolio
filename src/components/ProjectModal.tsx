@@ -10,7 +10,6 @@ import {
   ChevronRight, 
   Sparkles, 
   Code2, 
-  Layers, 
   CheckCircle2, 
   ArrowUpRight,
   Eye
@@ -445,11 +444,7 @@ function ProjectModalContent({ project, onClose }: { project: Project; onClose: 
             </div>
 
             {/* Sticky Bottom Footer Meta */}
-            <div className="p-6 border-t border-white/10 bg-neutral-950/80 backdrop-blur-md flex items-center justify-between text-xs font-mono text-neutral-500">
-              <div className="flex items-center gap-2">
-                <Layers size={14} />
-                <span>ID: {project.id ? project.id.slice(0, 8) : "local"}</span>
-              </div>
+            <div className="p-6 border-t border-white/10 bg-neutral-950/80 backdrop-blur-md flex items-center justify-end text-xs font-mono text-neutral-500">
               <button
                 onClick={onClose}
                 className="hover:text-white transition-colors cursor-pointer"
